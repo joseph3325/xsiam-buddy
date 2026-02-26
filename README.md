@@ -6,7 +6,7 @@ A Claude Code plugin for building [Cortex XSIAM](https://www.paloaltonetworks.co
 
 ```bash
 claude plugin marketplace add joseph3325/xsiam-buddy
-claude plugin install xsiam-content-dev@xsiam-buddy
+claude plugin install xsiam-buddy@xsiam-buddy
 ```
 
 ## Skills
@@ -87,7 +87,7 @@ xsiam-buddy/
 
 | Field | Value |
 |---|---|
-| Name | xsiam-content-dev |
-| Version | 0.1.0 |
+| Name | xsiam-buddy |
+| Version | 0.1.2 |
 | Author | joseph3325 |
 | Keywords | xsiam, xsoar, cortex, xql, playbook, automation, security |

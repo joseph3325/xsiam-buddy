@@ -5,11 +5,11 @@
   },
   "metadata": {
     "description": "Cortex XSIAM content development tools for Claude Code",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "plugins": [
     {
-      "name": "xsiam-content-dev",
+      "name": "xsiam-buddy",
       "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, playbooks, and documentation",
       "source": "./",
       "strict": true,
