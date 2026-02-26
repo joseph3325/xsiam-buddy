@@ -12,7 +12,7 @@
       "name": "xsiam-content-dev",
       "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, playbooks, and documentation",
       "source": "./",
-      "strict": false,
+      "strict": true,
       "skills": [
         "./skills/xsiam-automations",
         "./skills/xsiam-xql",
