@@ -1,0 +1,24 @@
+{
+  "name": "xsiam-buddy",
+  "owner": {
+    "name": "joseph3325"
+  },
+  "metadata": {
+    "description": "Cortex XSIAM content development tools for Claude Code",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "xsiam-content-dev",
+      "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, playbooks, and documentation",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/xsiam-automations",
+        "./skills/xsiam-xql",
+        "./skills/xsiam-playbooks",
+        "./skills/xsiam-docs"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "xsiam-content-dev",
+  "version": "0.1.0",
+  "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, playbooks, and documentation",
+  "author": {
+    "name": "Joe"
+  },
+  "keywords": ["xsiam", "xsoar", "cortex", "xql", "playbook", "automation", "security"]
+}
