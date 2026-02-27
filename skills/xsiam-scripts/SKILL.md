@@ -77,10 +77,8 @@ The embedded Python follows XSOAR/XSIAM conventions:
 - In XSIAM alert-context scripts: use `demisto.alert()` (not `demisto.incident()`), and immediately normalize the result to flatten `CustomFields`:
   ```python
   issue = demisto.alert()
-  try:
-      cf = issue.pop('CustomFields')
-      issue.update(cf)
-  except: pass
+  cf = issue.pop('CustomFields', {})
+  issue.update(cf)
   ```
 
 ### 4. File Output
