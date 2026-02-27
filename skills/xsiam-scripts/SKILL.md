@@ -74,7 +74,14 @@ The embedded Python follows XSOAR/XSIAM conventions:
 - Parse args with `argToList()`, `argToBoolean()`, `arg_to_number()`, `arg_to_datetime()` — never raw casting
 - Return results with `CommandResults` and `return_results()`
 - Chain to integrations with `execute_command('command-name', args)` — not raw `demisto.executeCommand()`
-- In XSIAM alert-context scripts: use `demisto.alert()` (not `demisto.incident()`)
+- In XSIAM alert-context scripts: use `demisto.alert()` (not `demisto.incident()`), and immediately normalize the result to flatten `CustomFields`:
+  ```python
+  issue = demisto.alert()
+  try:
+      cf = issue.pop('CustomFields')
+      issue.update(cf)
+  except: pass
+  ```
 
 ### 4. File Output
 
