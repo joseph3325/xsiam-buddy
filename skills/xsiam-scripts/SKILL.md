@@ -108,6 +108,7 @@ Before delivering, verify:
 - [ ] **Do not include** `register_module_line()` calls — platform-injected on export
 - [ ] No tab characters; consistent YAML indentation throughout
 - [ ] XSIAM alert-context scripts use `demisto.alert()` not `demisto.incident()`
+- [ ] If `demisto.alert()` is called, `CustomFields` is immediately flattened into the alert dict via `issue.pop('CustomFields', {})` + `issue.update(cf)`
 - [ ] Arg parsing uses helpers (`argToList`, `argToBoolean`, `arg_to_number`, `arg_to_datetime`), not raw casting
 
 ## Key Conventions
