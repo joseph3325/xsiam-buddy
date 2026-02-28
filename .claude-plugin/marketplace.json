@@ -14,10 +14,11 @@
       "source": "./",
       "strict": true,
       "skills": [
-        "./skills/xsiam-script",
+        "./skills/xsiam-scripts",
         "./skills/xsiam-xql",
         "./skills/xsiam-playbooks",
-        "./skills/xsiam-docs"
+        "./skills/xsiam-docs",
+        "./skills/xsiam-shared"
       ]
     }
   ]
