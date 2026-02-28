@@ -14,7 +14,7 @@
       "source": "./",
       "strict": true,
       "skills": [
-        "./skills/xsiam-automations",
+        "./skills/xsiam-script",
         "./skills/xsiam-xql",
         "./skills/xsiam-playbooks",
         "./skills/xsiam-docs"
