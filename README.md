@@ -1,6 +1,6 @@
 # xsiam-buddy
 
-A Claude Code plugin for building [Cortex XSIAM](https://www.paloaltonetworks.com/cortex/cortex-xsiam) and XSOAR content — automation scripts, XQL queries, playbooks, and documentation — using natural language.
+A Claude Code plugin for building [Cortex XSIAM](https://www.paloaltonetworks.com/cortex/cortex-xsiam) and XSOAR content — automation scripts, integrations, XQL queries, playbooks, and documentation — using natural language.
 
 ## Installation
 
@@ -11,15 +11,22 @@ claude plugin install xsiam-buddy@xsiam-buddy
 
 ## Skills
 
-### `xsiam-automations`
-Generate Python automation scripts and YAML metadata files following XSOAR conventions. Supports both standalone scripts and multi-command integrations. Produces the full directory structure (`ScriptName/ScriptName.py`, `ScriptName.yml`, `ScriptName_test.py`) with test stubs included.
+### `xsiam-scripts`
+Generate standalone Python automation scripts embedded in importable YAML files. Produces unified `.yml` files ready for direct import into XSIAM, with Python embedded in the `script: |-` field, proper field ordering, and `demisto.alert()` normalization for XSIAM context.
 
-**Example triggers:** "create an automation", "write an XSIAM script", "build an integration for CrowdStrike"
+**Example triggers:** "create a script", "write an XSIAM script", "build an automation", "XSOAR script"
+
+---
+
+### `xsiam-integrations`
+Generate multi-command Python integrations with `BaseClient` and a corresponding YAML metadata file. Produces unified `.yml` files with Python embedded in `script.script: |-`, authentication configuration, and full command/argument definitions.
+
+**Example triggers:** "build an integration", "create an integration for CrowdStrike", "write an XSIAM integration", "connect to an API"
 
 ---
 
 ### `xsiam-xql`
-Generate XQL queries from natural language descriptions. Covers threat hunting, investigation, analytics, and correlation rules across all common XSIAM datasets. Handles pipe-separated stage syntax, time ranges, and field references.
+Generate XQL queries from natural language descriptions. Covers threat hunting, investigation, analytics, and correlation rules across all common XSIAM datasets. Handles pipe-separated stage syntax, time ranges, joins, and field references.
 
 **Example triggers:** "write an XQL query", "hunt for threats", "search XSIAM data", "build a correlation rule"
 
@@ -41,14 +48,16 @@ Generate all types of XSIAM documentation: integration READMEs, runbooks/SOPs, r
 
 Each skill draws from reference files included in the plugin:
 
-| Reference | Contents |
-|---|---|
-| XQL syntax reference | Stages, operators, functions, and time syntax |
-| XQL datasets | Common dataset names and field schemas |
-| Automation YAML spec | All required and optional metadata fields |
-| Script patterns | CommonServerPython, BaseClient, CommandResults, error handling |
-| Playbook YAML schema | Task types, conditions, and sub-playbook references |
-| Documentation templates | Section templates for each doc type |
+| Reference | Used By | Contents |
+|---|---|---|
+| XQL syntax reference | xsiam-xql | Stages, operators, functions, and time syntax |
+| XQL datasets | xsiam-xql | Common dataset names and field schemas |
+| Script YAML spec | xsiam-scripts | Required field ordering and complete examples |
+| Integration YAML spec | xsiam-integrations | Integration structure, configuration, and command schema |
+| Integration patterns | xsiam-integrations | BaseClient, pagination, error handling patterns |
+| Common patterns | xsiam-scripts, xsiam-integrations | Shared Python patterns: CommandResults, indicators, logging |
+| Playbook YAML schema | xsiam-playbooks | Task types, conditions, and sub-playbook references |
+| Documentation templates | xsiam-docs | Section templates for each doc type |
 
 ## Usage
 
@@ -56,6 +65,9 @@ Describe what you want to build in natural language. Examples:
 
 ```
 Create an integration for CrowdStrike Falcon that can get detections and contain hosts
+```
+```
+Write a standalone script that enriches an IP address using VirusTotal
 ```
 ```
 Write an XQL query to find all failed logins from outside the US in the last 24 hours
@@ -75,10 +87,12 @@ xsiam-buddy/
 │   ├── plugin.json             # Plugin metadata
 │   └── marketplace.json        # Marketplace manifest
 ├── skills/
-│   ├── xsiam-automations/      # Automation script generation
+│   ├── xsiam-scripts/          # Standalone script generation
+│   ├── xsiam-integrations/     # Multi-command integration generation
 │   ├── xsiam-xql/              # XQL query generation
 │   ├── xsiam-playbooks/        # Playbook generation
-│   └── xsiam-docs/             # Documentation generation
+│   ├── xsiam-docs/             # Documentation generation
+│   └── xsiam-shared/           # Shared reference files (common patterns)
 └── docs/
     └── plans/                  # Design documents
 ```
