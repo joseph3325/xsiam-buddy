@@ -173,7 +173,7 @@ dataset = abnormal_security_generic_alert_raw
 | fields caseId, case_status, severity, severity_level, analysis, genai_summary, affectedEmployee, firstObserved
 ```
 
-**Demonstrates:** `if()` for conditional severity elevation, `contains` operator on a user-supplied domain substring.
+**Demonstrates:** `if()` to conditionally overwrite a raw source field (`severity_level` is a field from `abnormal_security_generic_alert_raw`, not a YAML wrapper metadata field — overwriting it here is appropriate); `contains` operator on a user-supplied domain substring.
 
 ---
 
@@ -311,7 +311,7 @@ dataset = google_workspace_alerts_raw
 // Title: Microsoft Azure - PowerShell Application Login Activity
 // Description: Detects successful PowerShell application logins originating outside trusted IP ranges
 // Author: xsiam-buddy
-// Dataset(s): msft_azure_ad_raw (via datamodel), ad_admin_accounts (lookup table)
+// Dataset(s): msft_azure_ad_raw (via datamodel)
 // Query last modified: 2026-03-01
 // Vendor Reference: N/A
 
