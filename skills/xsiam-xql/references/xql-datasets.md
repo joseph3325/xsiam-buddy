@@ -757,6 +757,220 @@ preset = identity_story
 | comp count() as failures by actor_id, _time
 ```
 
+### ad_users
+
+A named preset over `pan_dss_raw` that surfaces Active Directory user records from the Palo Alto Cloud Identity Engine (CIE).
+
+**Usage:**
+```
+preset = ad_users
+```
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sam_account_name` | string | SAM account name (short username) |
+| `display_name` | string | Full display name |
+| `distinguished_name` | string | LDAP distinguished name |
+| `security_identifier` | string | Windows SID |
+| `email` | string | User email address |
+| `security_group_list` | array | List of security group memberships |
+| `department` | string | Department name |
+
+**Common Use Cases:**
+- Join to enrich endpoint or alert events with user identity
+- Filter events to users belonging to specific security groups
+
+---
+
+## Third-Party Alert Datasets
+
+These datasets are populated by third-party integrations ingesting vendor alert data into XSIAM.
+
+### abnormal_security_generic_alert_raw
+
+Alert data from Abnormal Security's email security platform.
+
+**Usage:**
+```
+dataset = abnormal_security_generic_alert_raw
+```
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `caseId` | string | Unique case identifier |
+| `case_status` | string | Case status (e.g., "Action Required") |
+| `severity` | string | Alert severity label (e.g., "Account Takeover") |
+| `severity_level` | string | Severity level for alert mapping |
+| `affectedEmployee` | string | Email address of the affected user |
+| `firstObserved` | timestamp | Time the anomaly was first detected |
+| `analysis` | string | Analyst-facing description |
+| `genai_summary` | string | AI-generated summary of the alert |
+
+---
+
+### thinkst_canary_generic_alert_raw
+
+Alert data from Thinkst Canary honeypot tokens and devices.
+
+**Usage:**
+```
+dataset = thinkst_canary_generic_alert_raw
+```
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `summary` | string | Short alert description |
+| `description` | string | Full alert description |
+| `_alert_data` | JSON | Raw alert payload — use `->` notation to extract fields (e.g., `_alert_data -> sourceip`) |
+| `_id` | string | XSIAM system event ID — use for `dedup _id` |
+
+**Common Use Cases:**
+- Canary token triggers (credential theft, file access)
+- Honeytoken-based insider threat detection
+
+---
+
+### darktrace_darktrace_raw
+
+Model breach and alert data from Darktrace network AI.
+
+**Usage:**
+```
+datamodel dataset = darktrace_darktrace_raw
+```
+
+**Note:** Query via `datamodel dataset =` to access XDM fields. Use `fields *, darktrace_darktrace_raw.percentscore as percentscore` to also pull raw columns not mapped to XDM.
+
+**Key Fields (raw — access via `fields *` aliasing):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `percentscore` | number | Risk score 0–100 |
+| `triggeredComponents` | JSON array | Components that triggered the model breach — use arrow notation + arraymap/arrayfilter to extract |
+
+---
+
+### google_workspace_alerts_raw
+
+Alert data from the Google Workspace Alert Center.
+
+**Usage:**
+```
+dataset = google_workspace_alerts_raw
+```
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `alertId` | string | Unique alert identifier |
+| `type` | string | Alert type (e.g., "User suspended") |
+| `source` | string | Alert source |
+| `data` | JSON | Alert payload — use `data -> email` etc. to extract fields |
+| `metadata` | JSON | Alert metadata — use `metadata -> severity` etc. |
+| `securityInvestigationToolLink` | string | Link to Security Investigation Tool |
+
+---
+
+## Identity and Directory Datasets
+
+### msft_azure_ad_raw
+
+Sign-in and audit log data from Microsoft Azure Active Directory.
+
+**Usage:**
+```
+datamodel dataset = msft_azure_ad_raw
+```
+
+**Important:** The correct dataset name is `msft_azure_ad_raw` — not `microsoft_azure_ad_raw`.
+
+Use `fields *, msft_azure_ad_raw.ipAddress as ipaddress` to surface the raw `ipAddress` field alongside XDM fields.
+
+**Key XDM Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `xdm.source.user.username` | string | UPN of the authenticating user |
+| `xdm.source.user.sam_account_name` | string | SAM account name |
+| `xdm.source.application.name` | string | Application name (e.g., "Azure Active Directory PowerShell") |
+| `xdm.event.outcome` | string | "SUCCESS" or "FAILURE" |
+| `xdm.event.outcome_reason` | string | Reason for failure |
+| `xdm.event.operation_sub_type` | string | Operation detail |
+| `xdm.session_context_id` | string | Session context identifier |
+
+---
+
+### pan_dss_raw
+
+Raw identity data from the Palo Alto Cloud Identity Engine (CIE). Contains AD user and computer records synchronized from on-premise Active Directory.
+
+**Usage:**
+```
+dataset = pan_dss_raw
+| filter source = "ad" and type = "user"    -- user records
+-- or
+| filter source = "ad" and type = "computer"  -- computer records
+```
+
+**Key Fields — User Records (`type = "user"`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sam_account_name` | string | SAM account name |
+| `netbios` | string | NetBIOS domain name |
+| `security_groups` | array | List of group CNs the user belongs to |
+| `dn` | string | Distinguished name |
+| `ou` | string | Organizational unit path |
+
+**Key Fields — Computer Records (`type = "computer"`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Computer short name |
+| `dns_host_name` | string | Fully qualified DNS hostname |
+| `dn` | string | Distinguished name |
+| `ou` | array | Organizational unit path (index 0 = immediate OU) |
+
+**Common Use Cases:**
+- Filter events to privileged users: `array_any(security_groups, "@element" ~= "^cn=Domain Admins")`
+- Exclude Domain Controllers: `filter arrayindex(ou, 0) != "Domain Controllers"`
+- Join with `microsoft_windows_raw` to correlate auth events with AD group membership
+
+---
+
+## Endpoint Inventory Datasets
+
+### endpoints
+
+XSIAM built-in endpoint registry. Contains all endpoints with active Cortex XDR agents.
+
+**Usage:**
+```
+dataset = endpoints
+```
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `endpoint_name` | string | Hostname of the endpoint |
+| `ip_address` | array | IP addresses assigned to the endpoint |
+| `operating_system` | string | OS name and version |
+| `mac_address` | string | MAC address |
+| `domain` | string | Domain the endpoint belongs to |
+| `user` | string | Last logged-in user (UPN format) |
+
+**Common Use Cases:**
+- Determine if a host has an XDR agent (for dynamic severity): `lowercase(host_name) in (dataset = endpoints | alter endpoint_name = lowercase(endpoint_name) | fields endpoint_name)`
+- Join on IP to enrich alert events with endpoint metadata
+
 ---
 
 ## Dataset Selection Best Practices
