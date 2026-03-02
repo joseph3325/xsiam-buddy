@@ -230,6 +230,17 @@ Select specific columns to return. Reduces output size and improves readability.
 | fields src, dst, sport, dport, bytes_sent, bytes_received
 ```
 
+**Wildcard with raw column aliasing:**
+
+When using `datamodel dataset =`, all XDM-mapped fields are available, but some raw source columns have no XDM mapping. Use `fields *` to pull all XDM fields and alias specific raw columns alongside them:
+
+```
+| fields *, darktrace_darktrace_raw.percentscore as percentscore,
+          darktrace_darktrace_raw.triggeredComponents as triggeredComponents
+```
+
+Use this pattern when you need both normalized XDM fields and a specific raw field that has no XDM mapping.
+
 ### alter
 
 Create new computed columns using functions and expressions. Commonly used for data transformation, enrichment, and conditional logic.
@@ -457,6 +468,24 @@ dataset = panw_ngfw_traffic_raw
   panw_ngfw_traffic_raw.src = cloud.source_ip
 ```
 
+**Chained joins — multiple sequential join stages:**
+
+```
+dataset = microsoft_windows_raw
+| join type = inner (
+    dataset = pan_dss_raw
+    | filter source = "ad" and type = "user"
+    | fields sam_account_name, netbios
+  ) as ad_users source_username = ad_users.sam_account_name and source_domain = ad_users.netbios
+| join type = inner (
+    dataset = pan_dss_raw
+    | filter source = "ad" and type = "computer"
+    | fields name, dns_host_name, ou
+  ) as ad_computers host_name = ad_computers.name or host_name = ad_computers.dns_host_name
+```
+
+Each `join` stage adds columns from its subquery to the running result. The second join operates on the already-joined output of the first. Subqueries can include their own `filter`, `alter`, `arrayexpand`, and `fields` stages.
+
 ### union
 
 Combine results from multiple queries into a single result set.
@@ -639,6 +668,7 @@ To get the first match as a scalar, wrap with `arrayindex(..., 0)`.
 | `arraydistinct(arr)` | Remove duplicate values from array. |
 | `arrayindex(arr, n)` | Get element at index `n` (0-based). |
 | `arraymerge(arr1, arr2, ...)` | Combine multiple arrays into one. |
+| `array_any(arr, condition)` | Return true if any element in `arr` matches the condition. Reference the current element with `@element`. |
 
 **Example — chained array operations to extract a specific field from nested JSON:**
 ```
@@ -651,6 +681,11 @@ To get the first match as a scalar, wrap with `arrayindex(..., 0)`.
       "@element" -> value
     )
   )
+```
+
+**Example — check if any array element matches a pattern:**
+```
+| filter array_any(security_groups, "@element" ~= "^cn=(Domain|Enterprise) Admins")
 ```
 
 ---
@@ -751,6 +786,14 @@ Some fields use typed enumerated constants rather than plain strings. Reference 
 | filter source_ip incidr("10.0.0.0/8")
 | filter destination_ip incidr("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
 ```
+
+**Negative match — exclude IPs in a range:**
+
+```
+| filter incidr(source_ip, "10.0.0.0/8") = false
+```
+
+`incidr()` returns a boolean. Use `= false` to exclude IPs that fall within the range — useful for filtering out internal traffic or trusted address spaces.
 
 ---
 
@@ -903,7 +946,9 @@ The XQL should:
 - Return only the fields needed for alert context via `fields`
 - Include the standard header comment block
 
-The XQL should **not** include `alter severity_level = ...`, `alter mitre_technique = ...`, or `alter alert_name = ...` — those fields belong in the YAML wrapper, not the query.
+The XQL should **not** include `alter mitre_technique = ...` or `alter alert_name = ...` — those fields belong in the YAML wrapper, not the query.
+
+**Exception — dynamic severity:** If the user explicitly requests a dynamically computed severity (e.g., the source emits a numeric risk score with no discrete severity field), use `alter xdm.alert.severity = if(score >= X, "HIGH", ...)` inside the XQL. This is only appropriate when the score itself is the severity signal and a static YAML value would be meaningless. Default to YAML-only severity unless the user asks for this.
 
 ### Generating a correlation rule
 
