@@ -27,7 +27,7 @@ dataset = google_workspace_admin_console_raw
        role_assignment_id = to_string(arraydistinct(arraymap(arrayfilter(arraymerge(arraymap(events -> [], "@element" -> parameters{})), "@element" -> name = "ROLE_ASSIGNMENT_ID"), "@element" -> value)))
 // Filter to actual admin role assignments only
 | filter role_name contains "admin"
-| fields _time, category, category_sub_type, role_name, role_assignment_id, target_user, actor_user, ipAddress
+| fields _time, category, category_sub_type, role_name, role_assignment_id, target_user, actor_user, ipAddress  // ipAddress is a raw camelCase field from the Google source — not an XDM mapping
 ```
 
 **Demonstrates:** Arrow notation (`->`), `arraymap`, `arrayfilter`, `arraydistinct`, `arraymerge`, chained array operations.
@@ -46,7 +46,7 @@ dataset = google_workspace_admin_console_raw
 
 dataset = xdr_data
 // Windows event log 4625 = failed logon
-| filter event_type = ENUM.EVENT_LOG and action_evtlog_event_id = 4625 and agent_hostname != null
+| filter event_type = ENUM.EVENT_LOG and action_evtlog_event_id = 4625 and agent_hostname != null  // ENUM.EVENT_LOG is a typed constant, not a string — do not quote it
 // Extract username and workstation from the event log message
 | alter User_Name = arrayindex(regextract(action_evtlog_message, "Account For Which Logon Failed:\r\n.*\r\n.*Account Name:.*?(\w.*)\r\n"), 0),
        Host_Name = arrayindex(regextract(action_evtlog_message, "Workstation Name:.*?(\w.*)\r\n"), 0)
@@ -69,7 +69,7 @@ dataset = xdr_data
 // Query last modified: 2026-03-01
 // Vendor Reference: N/A
 
-config timeframe = 7D
+config timeframe = 7d  // interval suffixes are case-insensitive (7d, 7D, 30d all valid)
 | dataset = issues
 | comp count() as IssueSourceCount by xdm.issue.detection.method
 | sort desc IssueSourceCount
@@ -152,4 +152,4 @@ dataset = xdr_data
 | limit 10
 ```
 
-**Demonstrates:** `ENUM.STORY`, inline field aliasing with `as` in `fields` stage, auth fields from story events.
+**Demonstrates:** `ENUM.STORY`, inline field aliasing with `as` in `fields` stage (XSIAM XQL dialect — use `alter` for renaming in standard XQL), auth fields from story events.
