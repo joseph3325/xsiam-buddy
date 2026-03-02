@@ -404,3 +404,5 @@ dataset = microsoft_windows_raw
 ```
 
 **Demonstrates:** `array_any(arr, condition)` for filtering by array membership; chained joins (three sequential `join` stages); `event_data ->` for structured JSON field extraction; `pan_dss_raw` Cloud Identity Engine dataset; `endpoints` dataset; inline dataset lookup inside `if()` for dynamic severity; `dn as target_dn` field aliasing in `fields` stage.
+
+---
