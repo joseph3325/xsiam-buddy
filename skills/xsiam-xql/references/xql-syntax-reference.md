@@ -77,6 +77,24 @@ preset = xdr_event
 | filter severity >= "high"
 ```
 
+### Datamodel Dataset
+
+Query a specific dataset through the unified XDM (Cross-Data Model) schema. Fields are prefixed with `xdm.*` instead of raw vendor field names.
+
+**Syntax:**
+```
+datamodel dataset = dataset_name
+```
+
+**Example:**
+```
+datamodel dataset = microsoft_windows_raw
+| filter xdm.event.id in ("4728", "4732", "4756")
+| fields xdm.source.host.hostname, xdm.source.user.username, xdm.event.description
+```
+
+Use `datamodel dataset =` when the source has XDM mappings and you want normalized field names that work across vendors (e.g., `xdm.source.user.username` rather than a vendor-specific field). Use plain `dataset =` for raw field access.
+
 ### Time Range
 
 Time ranges are typically specified in the XSIAM UI, but can also be set in filter stages:
@@ -86,6 +104,27 @@ dataset = xdr_data
 | filter _time > timestamp_sub(current_time(), "7d")
 | filter _time < current_time()
 ```
+
+### Config Timeframe Preamble
+
+Set a query-level time window as the first line of the query. When used, `dataset` or `preset` must be prefixed with a pipe (`|`).
+
+**Syntax:**
+```
+config timeframe = <interval>
+| dataset = dataset_name
+```
+
+**Intervals:** case-insensitive — `7d`, `30d`, `1h`, `24h`, etc.
+
+**Example:**
+```
+config timeframe = 30d
+| dataset = xdr_data
+| filter action_process_image_sha256 = $hash
+```
+
+Note: `config timeframe` overrides the XSIAM UI time picker. Use it when the query needs a specific fixed lookback regardless of dashboard settings.
 
 ---
 
@@ -152,6 +191,24 @@ Reduce dataset rows based on conditional logic.
 
 ```
 | filter user_name in ("admin", "root", "system")
+```
+
+**Inline Dataset Lookup:**
+
+Filter a field against values dynamically fetched from another dataset. The inner query must produce a single column via a `fields` stage.
+
+**Syntax:**
+```
+| filter field in (dataset = lookup_table | fields column_name)
+```
+
+**Example:**
+```
+| filter lowercase(xdm.target.user.groups) in (
+    dataset = ad_group_lookup
+    | alter group_name = lowercase(group_name)
+    | fields group_name
+  )
 ```
 
 ### fields
@@ -354,6 +411,23 @@ Remove duplicate rows based on field values.
 | dedup src, dst
 ```
 
+### view
+
+Control column display order in results.
+
+**Syntax:**
+```
+| view column order = populated
+```
+
+`populated` suppresses columns with no non-null values. Useful for investigation queries across wide datasets where most fields will be empty for any given row.
+
+**Example:**
+```
+| fields _time, agent_hostname, action_process_image_path, action_file_path, action_registry_path
+| view column order = populated
+```
+
 ### join
 
 Combine rows from two datasets based on matching field values. Supports multiple join types.
@@ -510,6 +584,77 @@ Apply sliding window functions for time-series analysis and anomaly detection.
 
 ---
 
+## JSON and Array Traversal
+
+### Arrow Notation (`->`)
+
+Navigate into JSON objects and arrays embedded in string fields.
+
+**Syntax:**
+```
+field -> key              -- extract scalar value from JSON object
+field -> []               -- expand JSON array into an XQL array
+field -> key{}            -- extract array of objects under a key
+```
+
+**Examples:**
+```
+| alter actor_email = actor -> email
+```
+```
+| alter all_events = events -> []
+```
+```
+| alter params = arraymerge(arraymap(events -> [], "@element" -> parameters{}))
+```
+
+Use `@element` as the iterator variable inside `arraymap` and `arrayfilter` when operating on the results of arrow expansion.
+
+---
+
+### regextract
+
+Extract regex capture groups from a string. Returns an array of all matches.
+
+**Syntax:**
+```
+regextract(string, pattern)
+```
+
+To get the first match as a scalar, wrap with `arrayindex(..., 0)`.
+
+**Example:**
+```
+| alter username = arrayindex(regextract(action_evtlog_message, "Account Name:\s+(\S+)"), 0)
+```
+
+---
+
+### Advanced Array Functions
+
+| Function | Description |
+|---|---|
+| `arraymap(arr, expr)` | Transform each element. Reference element with `@element`. |
+| `arrayfilter(arr, condition)` | Keep only elements matching condition. Use `@element` to reference current element. |
+| `arraydistinct(arr)` | Remove duplicate values from array. |
+| `arrayindex(arr, n)` | Get element at index `n` (0-based). |
+| `arraymerge(arr1, arr2, ...)` | Combine multiple arrays into one. |
+
+**Example — chained array operations to extract a specific field from nested JSON:**
+```
+| alter role_names = arraydistinct(
+    arraymap(
+      arrayfilter(
+        arraymerge(arraymap(events -> [], "@element" -> parameters{})),
+        "@element" -> name = "ROLE_NAME"
+      ),
+      "@element" -> value
+    )
+  )
+```
+
+---
+
 ## Operators and Expressions
 
 ### Comparison Operators
@@ -574,6 +719,25 @@ Used in filter and conditional statements:
 ```
 | filter action_process_image_path != null
 | filter user_name = null
+```
+
+### ENUM Types
+
+Some fields use typed enumerated constants rather than plain strings. Reference them with the `ENUM.` prefix — do not quote them as strings.
+
+**Common values:**
+- `ENUM.EVENT_LOG` — Windows or Syslog event log entries
+- `ENUM.STORY` — correlated story events (cross-source auth/identity events)
+- `ENUM.NETWORK_CONNECTION` — network connection events
+- `ENUM.FILE` — file operation events
+- `ENUM.PROCESS` — process execution events
+
+**Examples:**
+```
+| filter event_type = ENUM.EVENT_LOG and action_evtlog_event_id = 4625
+```
+```
+| filter event_type = ENUM.STORY and auth_outcome != "SUCCESS"
 ```
 
 ### Network Operators
@@ -727,46 +891,25 @@ dataset = xdr_data
 
 ---
 
-## Correlation Rule Syntax
+## Correlation Rules
 
-XQL correlation rules are built on the same foundation as standard queries but generate alerts based on matching conditions.
+Correlation rules are **not** built by embedding severity, MITRE, or alert name as `alter` fields inside the XQL. The XQL query provides the detection logic only — it defines which events match. All alert metadata (name, severity, MITRE mappings, suppression) lives in a surrounding `.yml` wrapper that XSIAM imports.
 
-### Basic Correlation Rule Structure
+### XQL role in a correlation rule
 
-```
-dataset = xdr_data
-| filter <detection_condition>
-| comp <aggregations> by <grouping_fields>
-| alter severity_level = <severity_mapping>
-| alter mitre_technique = <att&ck_mapping>
-```
+The XQL should:
+- Select the dataset and filter on the detection condition
+- Aggregate if needed (e.g., `comp count() by agent_hostname`)
+- Return only the fields needed for alert context via `fields`
+- Include the standard header comment block
 
-### Example: Suspicious Process Creation
+The XQL should **not** include `alter severity_level = ...`, `alter mitre_technique = ...`, or `alter alert_name = ...` — those fields belong in the YAML wrapper, not the query.
 
-```
-dataset = xdr_data
-| filter action_type = "process_launch" and action_process_image_name ~= "(powershell|cmd|rundll32)\.exe"
-| alter severity_level = if(action_process_image_name = "powershell.exe", "high", "medium")
-| comp count() as event_count by agent_hostname
-| filter event_count > 5
-```
+### Generating a correlation rule
 
-### Alert Field Enhancement
+When generating a correlation rule, produce a populated `.yml` file using `references/correlation-template.yml` as the structure. Embed the XQL inside `xql_query` as a YAML literal block scalar (`|`).
 
-```
-| alter alert_name = concat("Suspicious Execution: ", action_process_image_name)
-| alter alert_description = concat("Host ", agent_hostname, " executed ", action_process_image_name)
-| alter mitre_technique = "T1086"
-| alter mitre_tactic = "Execution"
-```
-
-### Severity Mapping
-
-```
-| alter severity = if(event_count > 100, "critical",
-         if(event_count > 50, "high",
-         if(event_count > 10, "medium", "low")))
-```
+See `references/correlation-template.yml` for all fields, valid values, and guidance.
 
 ---
 
