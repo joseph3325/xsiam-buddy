@@ -1,0 +1,71 @@
+# Correlation Rule YAML Template
+#
+# This is the structure XSIAM exports for a correlation rule.
+# When generating a correlation rule, populate all fields and embed
+# the XQL in xql_query as a YAML literal block string (|).
+#
+# Severity values:
+#   SEV_010_CRITICAL, SEV_020_HIGH, SEV_030_MEDIUM, SEV_040_LOW, SEV_060_INFORMATIONAL
+#
+# execution_mode values:
+#   REAL_TIME   — rule evaluates continuously as events arrive
+#   SCHEDULED   — rule runs on a crontab schedule (set crontab field)
+#
+# search_window: time window for event correlation, e.g. "10m", "1h", "24h"
+#   Only relevant for SCHEDULED rules or windowed aggregations.
+#
+# suppression_enabled: if true, duplicate alerts are suppressed for suppression_duration
+# suppression_duration: e.g. "1h", "24h", "7d"
+# suppression_fields: list of field names that define "same alert" for deduplication
+#
+# mitre_defs: map of technique IDs to tactic names, e.g.:
+#   T1078: Initial Access
+#   T1110: Credential Access
+#
+# alert_domain: almost always DOMAIN_SECURITY
+# alert_category: OTHER, or a more specific category if applicable
+# alert_type: null unless a specific type is required
+# user_defined_category / user_defined_severity: null unless overriding
+# drilldown_query_timeframe: ALERT (uses alert timeframe) or a fixed value
+# mapping_strategy: CUSTOM (standard for user-defined rules)
+# lookup_mapping: [] unless field remapping is needed
+# investigation_query_link: '' or a URL to a related investigation query
+# dataset: alerts (always)
+# alert_fields: {} unless specific alert field mappings are needed
+
+- action: ALERTS
+  alert_category: OTHER
+  alert_description: null
+  alert_domain: DOMAIN_SECURITY
+  alert_fields: {}
+  alert_name: "<Alert Display Name>"
+  alert_type: null
+  crontab: null
+  dataset: alerts
+  description: null
+  drilldown_query_timeframe: ALERT
+  execution_mode: REAL_TIME
+  global_rule_id: "<generate a UUID v4>"
+  investigation_query_link: ''
+  lookup_mapping: []
+  mapping_strategy: CUSTOM
+  mitre_defs: {}
+  name: "<Rule Name (same as alert_name or slightly different)>"
+  search_window: null
+  severity: SEV_030_MEDIUM
+  suppression_duration: null
+  suppression_enabled: false
+  suppression_fields: null
+  user_defined_category: null
+  user_defined_severity: null
+  xql_query: |
+    // Title: <Meaningful Name>
+    // Description: <What this detects>
+    // Author: xsiam-buddy
+    // Dataset(s): <dataset or preset>
+    // Query last modified: <today's date>
+    // Vendor Reference: <link or N/A>
+
+    dataset = example_dataset
+    | filter <detection_condition>
+    | fields <relevant fields>
