@@ -6,7 +6,7 @@ description: >
   "build a correlation rule", "query dataset", "XQL", "threat hunting query",
   or needs to generate Cortex Query Language queries for XSIAM from
   natural language descriptions.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # XQL Query Generation
