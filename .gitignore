@@ -208,3 +208,11 @@ __marimo__/
 
 # macOS
 .DS_Store
+
+# Claude
+CLAUDE.md
+
+# Implementation plans (Claude execution scaffolding — not for repo)
+# Design docs (*-design.md) are kept
+docs/plans/*
+!docs/plans/*-design.md
