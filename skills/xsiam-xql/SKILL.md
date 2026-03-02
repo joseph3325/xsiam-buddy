@@ -15,9 +15,11 @@ Generate Cortex Query Language (XQL) queries for XSIAM from natural language des
 
 ## Before Starting
 
-Read the reference files to understand XQL syntax and available datasets:
+Read all four reference files before generating any query:
 - `references/xql-syntax-reference.md` — Complete XQL syntax, stages, operators, and functions
 - `references/xql-datasets.md` — Available datasets, their fields, and presets
+- `references/xql-examples.md` — Real production examples; model syntax and patterns from these
+- `references/correlation-template.yml` — YAML wrapper structure for correlation rules
 
 ## Workflow
 
@@ -86,32 +88,54 @@ Not all stages are needed for every query. Use only what's required.
 
 ### 5. Output Format
 
-Present each query with:
-1. **Description** — what the query finds, in plain language
-2. **Query** — the XQL query in a code block
-3. **Expected output** — what columns/data the user will see
-4. **Customization notes** — fields the user may want to adjust (time range, specific values)
+**Default — plain query:**
 
-### 6. For Correlation Rules
+Return the XQL in a single code block. Always include the standard header comment block at the top of the XQL:
 
-When generating correlation rules, additionally include:
-- Alert name and severity mapping
-- MITRE ATT&CK technique mapping if applicable
-- Recommended threshold/frequency settings
-- False positive considerations
+```xql
+// Title: <meaningful name for this query>
+// Description: <one sentence — what this finds>
+// Author: xsiam-buddy
+// Dataset(s): <dataset or preset used>
+// Query last modified: <today's date as YYYY-MM-DD>
+// Vendor Reference: <link to vendor docs, or N/A>
+
+dataset = ...
+| filter ...
+```
+
+No prose description, expected output section, or customization notes. The header comments carry that context.
+
+**Correlation rule:**
+
+When the user explicitly asks for a correlation rule (not just a detection query), output a populated `.yml` file using the structure from `references/correlation-template.yml`. Embed the XQL inside `xql_query` as a YAML literal block scalar (`|`). Do not output a separate plain XQL block.
 
 ## Common Query Templates
 
-**Find process execution by hash**:
+**Find process execution by hash:**
 ```xql
+// Title: Process Execution by Hash
+// Description: Find all endpoints that executed a process matching a given SHA256 hash
+// Author: xsiam-buddy
+// Dataset(s): xdr_data
+// Query last modified: 2026-03-01
+// Vendor Reference: N/A
+
 dataset = xdr_data
 | filter action_file_sha256 = "HASH_VALUE"
 | fields agent_hostname, agent_ip, action_process_image_name, action_file_path, _time
 | sort desc _time
 ```
 
-**Failed login spike detection**:
+**Failed login spike detection:**
 ```xql
+// Title: Failed Login Spike Detection
+// Description: Identify users with an unusual number of failed login attempts — potential brute force
+// Author: xsiam-buddy
+// Dataset(s): microsoft_azure_ad_sign_in_raw
+// Query last modified: 2026-03-01
+// Vendor Reference: N/A
+
 dataset = microsoft_azure_ad_sign_in_raw
 | filter status = "Failure"
 | comp count() as failed_count by user_principal_name
@@ -119,16 +143,30 @@ dataset = microsoft_azure_ad_sign_in_raw
 | sort desc failed_count
 ```
 
-**Network traffic to suspicious destination**:
+**Network traffic to suspicious destination:**
 ```xql
+// Title: Network Traffic to Suspicious Destination
+// Description: Find all connections to a list of known suspicious IPs
+// Author: xsiam-buddy
+// Dataset(s): panw_ngfw_traffic_raw
+// Query last modified: 2026-03-01
+// Vendor Reference: N/A
+
 dataset = panw_ngfw_traffic_raw
 | filter dst in ("IP1", "IP2", "IP3")
 | fields src, dst, dport, app, action, bytes_sent, _time
 | sort desc _time
 ```
 
-**Lateral movement detection**:
+**Lateral movement detection:**
 ```xql
+// Title: Lateral Movement Detection
+// Description: Detect suspicious remote execution tools used across multiple hosts
+// Author: xsiam-buddy
+// Dataset(s): xdr_data
+// Query last modified: 2026-03-01
+// Vendor Reference: N/A
+
 dataset = xdr_data
 | filter action_type in ("PROCESS_EXECUTION", "REMOTE_PROCESS_EXECUTION")
 | filter action_process_image_name in ("psexec.exe", "wmic.exe", "powershell.exe")
@@ -138,10 +176,13 @@ dataset = xdr_data
 
 ## Quality Checklist
 
-Before delivering a query, verify:
+Before delivering, verify:
+- [ ] Header comments present and fully populated — no placeholder values like `<...>` remaining
+- [ ] `// Query last modified:` has today's date
 - [ ] Dataset exists and is appropriate for the use case
-- [ ] Field names are valid for the chosen dataset
-- [ ] Filter conditions use correct operators (= for exact, contains for substring, ~= for regex)
-- [ ] Aggregations include appropriate `by` clauses
-- [ ] Time ranges are reasonable for the data volume
-- [ ] Query is readable with clear stage separation
+- [ ] Field names match those in `references/xql-datasets.md` for the chosen dataset
+- [ ] Filter conditions use correct operators (`=` exact, `contains` substring, `~=` regex)
+- [ ] Aggregations include `by` clause unless a global aggregate is intended
+- [ ] Time range specified via `config timeframe` preamble or `_time` filter
+- [ ] For wide investigation queries: `| view column order = populated` applied
+- [ ] For correlation rules: all YAML fields populated, real UUID v4 in `global_rule_id`, no placeholder text
