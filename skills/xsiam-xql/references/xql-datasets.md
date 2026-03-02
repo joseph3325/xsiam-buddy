@@ -784,7 +784,7 @@ preset = ad_users
 
 **Common Use Cases:**
 - Join to enrich endpoint or alert events with user identity
-- Filter events to users belonging to specific security groups
+- Filter events to users in a specific group (use `security_group_list` — the preset field name differs from `security_groups` on `pan_dss_raw`): `array_any(security_group_list, "@element" contains "Domain Admins")`
 
 ---
 
@@ -944,7 +944,7 @@ dataset = pan_dss_raw
 
 **Common Use Cases:**
 - Filter events to privileged users: `array_any(security_groups, "@element" ~= "^cn=Domain Admins")`
-- Exclude Domain Controllers: `filter arrayindex(ou, 0) != "Domain Controllers"`
+- Exclude Domain Controllers (computer records only): `filter arrayindex(ou, 0) != "Domain Controllers"`
 - Join with `microsoft_windows_raw` to correlate auth events with AD group membership
 
 ---
