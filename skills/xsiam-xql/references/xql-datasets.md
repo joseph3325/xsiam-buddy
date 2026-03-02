@@ -100,6 +100,8 @@ dataset = endpoints
 | `users` | array | List of logged-in users |
 | `installed_software` | array | List of installed applications |
 | `tags` | array | Custom tags assigned to endpoint |
+| `ip_address` | array | IP addresses assigned to the endpoint (use `arrayexpand` when joining on IP) |
+| `user` | string | Last logged-in user (UPN format) |
 
 **Common Use Cases:**
 
@@ -107,6 +109,8 @@ dataset = endpoints
 - Identify endpoints missing recent agents
 - Inventory management and compliance
 - Locate endpoints by OS or domain
+- Determine if a host has an XDR agent (for dynamic severity): `lowercase(host_name) in (dataset = endpoints | alter endpoint_name = lowercase(endpoint_name) | fields endpoint_name)`
+- Join on `ip_address` to enrich alert events with endpoint metadata: `| arrayexpand ip_address` then join on `ip_address = jn.ip_address`
 
 **Example Query:**
 ```
@@ -942,34 +946,6 @@ dataset = pan_dss_raw
 - Filter events to privileged users: `array_any(security_groups, "@element" ~= "^cn=Domain Admins")`
 - Exclude Domain Controllers: `filter arrayindex(ou, 0) != "Domain Controllers"`
 - Join with `microsoft_windows_raw` to correlate auth events with AD group membership
-
----
-
-## Endpoint Inventory Datasets
-
-### endpoints
-
-XSIAM built-in endpoint registry. Contains all endpoints with active Cortex XDR agents.
-
-**Usage:**
-```
-dataset = endpoints
-```
-
-**Key Fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `endpoint_name` | string | Hostname of the endpoint |
-| `ip_address` | array | IP addresses assigned to the endpoint |
-| `operating_system` | string | OS name and version |
-| `mac_address` | string | MAC address |
-| `domain` | string | Domain the endpoint belongs to |
-| `user` | string | Last logged-in user (UPN format) |
-
-**Common Use Cases:**
-- Determine if a host has an XDR agent (for dynamic severity): `lowercase(host_name) in (dataset = endpoints | alter endpoint_name = lowercase(endpoint_name) | fields endpoint_name)`
-- Join on IP to enrich alert events with endpoint metadata
 
 ---
 
