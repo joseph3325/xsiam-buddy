@@ -793,7 +793,7 @@ Some fields use typed enumerated constants rather than plain strings. Reference 
 | filter incidr(source_ip, "10.0.0.0/8") = false
 ```
 
-`incidr()` returns a boolean. Use `= false` to exclude IPs that fall within the range — useful for filtering out internal traffic or trusted address spaces.
+`incidr()` returns a boolean. Use `= false` to exclude IPs that fall within the range — useful for filtering out internal traffic or trusted address spaces. Note: the function-call form `incidr(ip, cidr)` is required here — the infix operator form (`ip incidr(cidr)`) does not support `= false` comparison.
 
 ---
 
