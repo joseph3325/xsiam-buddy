@@ -93,11 +93,33 @@ mainengineinfo: {}   # Required — always empty map
 | `predefined` | No | List of allowed values for dropdown selection |
 | `secret` | No | `true` if the value should be masked |
 
+### register_module_line (Required)
+
+Every script must include `register_module_line()` calls as the **first and last lines** of the embedded Python:
+
+```python
+register_module_line('ScriptName', 'start', __line__())
+
+import demistomock as demisto
+from CommonServerPython import *
+from CommonServerUserPython import *
+
+# ... all code ...
+
+if __name__ in ('__main__', '__builtin__', 'builtins'):
+    main()
+
+register_module_line('ScriptName', 'end', __line__())
+```
+
+- The string passed must match the script's `name` field exactly.
+- These are **not** imports — they are bare function calls provided by the platform runtime.
+- Do **not** add an `if __name__` guard around them; they must always execute at module load time.
+
 ### Platform-Generated Fields
 
 These appear in XSIAM **exports** — do not write them by hand:
 - `restrictioncenter: {}` and `signature: ""` — conditionally present; always empty
-- `register_module_line('script-name', 'start', __line__())` / `register_module_line('script-name', 'end', __line__())` — injected by the platform at export time; writing them manually causes double-wrapping
 
 ### Content-Pack-Only Fields (Never Include for Direct XSIAM Import)
 
@@ -114,6 +136,13 @@ These are CI/content-pack conventions only — real XSIAM tenant imports do not 
 Scripts do not use a `BaseClient`. The `main()` function reads args directly:
 
 ```python
+register_module_line('ScriptName', 'start', __line__())
+
+import demistomock as demisto
+from CommonServerPython import *
+from CommonServerUserPython import *
+
+
 def main():
     try:
         args = demisto.args()
@@ -141,40 +170,38 @@ def main():
 
 if __name__ in ('__main__', '__builtin__', 'builtins'):
     main()
+
+register_module_line('ScriptName', 'end', __line__())
 ```
 
 ---
 
 ## Execute Command Pattern (Scripts Only)
 
-Scripts chain to integrations or other scripts using `execute_command()` (the CommonServerPython alias). It raises `DemistoException` automatically on error — no manual `isError()` check needed:
+Scripts chain to integrations or other scripts using `demisto.executeCommand()`. It returns a list of result entries — check for errors with `isError()` before accessing `Contents`:
 
 ```python
-# Preferred: execute_command() — raises on error automatically
 def enrich_ip(ip: str) -> dict:
-    result = execute_command('ip', {'ip': ip})
-    return result  # already unwrapped to Contents
-
-
-# Multiple enrichments
-def enrich_multiple(ips: list) -> list:
-    results = []
-    for ip in ips:
-        data = execute_command('ip', {'ip': ip})
-        results.append(data)
-    return results
-
-
-# If you need raw control, use demisto.executeCommand() with manual error checking
-def enrich_ip_low_level(ip: str) -> dict:
     results = demisto.executeCommand('ip', {'ip': ip})
     if isError(results[0]):
         raise DemistoException(f'ip command failed: {results[0].get("Contents")}')
     return results[0].get('Contents', {})
+
+
+# Allow partial success across multiple IPs
+def enrich_multiple(ips: list) -> list:
+    enriched = []
+    for ip in ips:
+        results = demisto.executeCommand('ip', {'ip': ip})
+        if isError(results[0]):
+            demisto.error(f'Enrichment failed for {ip}: {results[0].get("Contents")}')
+            continue
+        enriched.append(results[0].get('Contents', {}))
+    return enriched
 ```
 
 **Notes:**
-- `execute_command()` is available via `from CommonServerPython import *`
+- `demisto.executeCommand()` returns a list of entry dicts; always check `isError(results[0])` before using `Contents`
 - Use these in **scripts** to chain integrations; avoid inside integrations themselves
 - For XSIAM alert-context scripts, access alert data with `demisto.alert()`, not `demisto.incident()`
 
@@ -193,6 +220,8 @@ vcShouldKeepItemLegacyProdMachine: false
 
 name: FormatData
 script: |-
+  register_module_line('FormatData', 'start', __line__())
+
   import demistomock as demisto
   from CommonServerPython import *
   from CommonServerUserPython import *
@@ -237,6 +266,8 @@ script: |-
   if __name__ in ('__main__', '__builtin__', 'builtins'):
       main()
 
+  register_module_line('FormatData', 'end', __line__())
+
 type: python
 tags:
   - Utility
@@ -275,6 +306,46 @@ runas: DBotWeakRole
 engineinfo: {}
 mainengineinfo: {}
 ```
+
+---
+
+---
+
+## Tags Reference
+
+Tags serve two purposes: **functional** tags that enable a script to appear in specific XSIAM UI locations, and **informational** tags that are purely organizational.
+
+### Functional Tags
+
+These tags wire the script into specific platform features. A script can carry multiple functional tags.
+
+| Tag | Effect |
+|-----|--------|
+| `transformer` | Script appears as a transformer option in playbook task input mappings |
+| `filter` | Script appears as a filter/condition option in playbook task conditions |
+| `field-change-triggered` | Script can be selected as a field-change trigger on layout fields |
+| `field-display` | Script can be selected to dynamically render the value of a specific layout field |
+| `dynamic-section` | Script can be used as a general-purpose dynamic display section in layouts |
+| `widget` | Script appears as a selectable widget in dashboards and reports |
+
+### Informational Tags
+
+Tags like `Utility`, `Data Processing`, `Enrichment`, etc. are organizational only — they do not affect where the script appears in the UI. Use them to make scripts easier to find in the content library.
+
+### Example: multi-purpose script
+
+```yaml
+tags:
+  - transformer
+  - Utility
+```
+
+### Notes
+
+- A script with no functional tag is only accessible by name (e.g., via `execute_command()` in a playbook task or another script).
+- `transformer` and `filter` scripts receive their input via the `value` argument by convention.
+- `field-display` and `dynamic-section` scripts typically return HTML or Markdown for rendering.
+- `widget` scripts must return a structure understood by the dashboard renderer.
 
 ---
 

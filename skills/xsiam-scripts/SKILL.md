@@ -69,11 +69,13 @@ Build a single `.yml` file. Field order must match real XSIAM export structure:
 ### 3. Python Code Conventions
 
 The embedded Python follows XSOAR/XSIAM conventions:
-- Standard imports: `demistomock`, `CommonServerPython`, `CommonServerUserPython`
+- First line: `register_module_line('ScriptName', 'start', __line__())` — use the exact script name
+- Last line: `register_module_line('ScriptName', 'end', __line__())` — use the exact script name
+- Standard imports come immediately after the opening `register_module_line`: `demistomock`, `CommonServerPython`, `CommonServerUserPython`
 - Simple `main()` with `try/except` and `return_error()`
 - Parse args with `argToList()`, `argToBoolean()`, `arg_to_number()`, `arg_to_datetime()` — never raw casting
 - Return results with `CommandResults` and `return_results()`
-- Chain to integrations with `execute_command('command-name', args)` — not raw `demisto.executeCommand()`
+- Chain to integrations with `demisto.executeCommand('command-name', args)` — check results with `isError()` and raise on failure
 - In XSIAM alert-context scripts: use `demisto.alert()` (not `demisto.incident()`), and immediately normalize the result to flatten `CustomFields`:
   ```python
   issue = demisto.alert()
@@ -105,7 +107,8 @@ Before delivering, verify:
 - [ ] All outputs have `contextPath`, `description`, and `type`
 - [ ] Docker image is a pinned `3.12.x` version (not `:latest`)
 - [ ] **Do not include** `fromversion`, `marketplaces`, `tests`, `timeout` — content-pack CI fields only
-- [ ] **Do not include** `register_module_line()` calls — platform-injected on export
+- [ ] First line of embedded Python is `register_module_line('ScriptName', 'start', __line__())` with the correct script name
+- [ ] Last line of embedded Python is `register_module_line('ScriptName', 'end', __line__())` with the correct script name
 - [ ] No tab characters; consistent YAML indentation throughout
 - [ ] XSIAM alert-context scripts use `demisto.alert()` not `demisto.incident()`
 - [ ] If `demisto.alert()` is called, `CustomFields` is immediately flattened into the alert dict via `issue.pop('CustomFields', {})` + `issue.update(cf)`

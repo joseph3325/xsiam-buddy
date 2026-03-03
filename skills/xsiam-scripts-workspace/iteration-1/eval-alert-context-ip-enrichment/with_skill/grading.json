@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Uses demisto.alert() not demisto.incident()",
+      "passed": true,
+      "evidence": "Line 45: alert = demisto.alert(). No demisto.incident() anywhere in the script."
+    },
+    {
+      "text": "CustomFields is flattened after demisto.alert()",
+      "passed": true,
+      "evidence": "Lines 46-47: cf = alert.pop('CustomFields', {}) followed by alert.update(cf) — immediately after demisto.alert() call"
+    },
+    {
+      "text": "Uses execute_command() not demisto.executeCommand()",
+      "passed": true,
+      "evidence": "Line 18: result = execute_command('ip', {'ip': ip}). No demisto.executeCommand() in the file."
+    },
+    {
+      "text": "register_module_line start is first line of script block",
+      "passed": true,
+      "evidence": "Line 9: register_module_line('enrich-alert-ips', 'start', __line__())"
+    },
+    {
+      "text": "register_module_line end is last line of script block",
+      "passed": true,
+      "evidence": "Line 108: register_module_line('enrich-alert-ips', 'end', __line__())"
+    },
+    {
+      "text": "vcShouldKeepItemLegacyProdMachine: false is present",
+      "passed": true,
+      "evidence": "Line 5: vcShouldKeepItemLegacyProdMachine: false"
+    },
+    {
+      "text": "All required boilerplate fields present",
+      "passed": true,
+      "evidence": "scripttarget: 0 (line 130), pswd: \"\" (line 133), runas: DBotWeakRole (line 135), engineinfo: {} (line 136), mainengineinfo: {} (line 137), enabled: true (line 119)"
+    },
+    {
+      "text": "No content-pack-only fields present",
+      "passed": true,
+      "evidence": "Searched full YAML — fromversion, marketplaces, tests, timeout are all absent"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "executor_duration_seconds": 65.8
+  }
+}

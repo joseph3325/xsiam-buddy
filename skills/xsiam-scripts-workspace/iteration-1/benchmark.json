@@ -1,0 +1,202 @@
+{
+  "metadata": {
+    "skill_name": "xsiam-scripts",
+    "skill_path": "/Users/joeplunkett/PycharmProjects/xsiam-buddy/skills/xsiam-scripts",
+    "timestamp": "2026-03-03T00:00:00Z",
+    "evals_run": ["normalize-alert-severity", "alert-context-ip-enrichment", "extract-domain-transformer"],
+    "runs_per_configuration": 1
+  },
+
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "normalize-alert-severity",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 66.9,
+        "tokens": 39611,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "register_module_line start is first line of script block", "passed": true, "evidence": "Line 9: register_module_line('NormalizeAlertSeverity', 'start', __line__())"},
+        {"text": "register_module_line end is last line of script block", "passed": true, "evidence": "Line 91: register_module_line('NormalizeAlertSeverity', 'end', __line__())"},
+        {"text": "vcShouldKeepItemLegacyProdMachine: false is present", "passed": true, "evidence": "Line 5"},
+        {"text": "All required boilerplate fields present", "passed": true, "evidence": "scripttarget: 0, pswd: \"\", runas: DBotWeakRole, engineinfo: {}, mainengineinfo: {}, enabled: true"},
+        {"text": "Docker image is pinned to a specific 3.12.x version", "passed": true, "evidence": "demisto/python3:3.12.12.6947692"},
+        {"text": "No content-pack-only fields present", "passed": true, "evidence": "No fromversion, marketplaces, tests, timeout"},
+        {"text": "Every arg entry has supportedModules: [] as first key", "passed": true, "evidence": "Line 114"},
+        {"text": "Outputs include contextPath, description, and type", "passed": true, "evidence": "All 3 outputs correct"},
+        {"text": "Script outputs both a numeric score and a label", "passed": true, "evidence": "Score (number) and Label (string) outputs present"}
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "normalize-alert-severity",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 59.3,
+        "tokens": 39018,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "register_module_line start is first line of script block", "passed": true, "evidence": "Line 9: register_module_line('NormalizeAlertSeverity', 'start', __line__())"},
+        {"text": "register_module_line end is last line of script block", "passed": true, "evidence": "Line 88: register_module_line('NormalizeAlertSeverity', 'end', __line__())"},
+        {"text": "vcShouldKeepItemLegacyProdMachine: false is present", "passed": true, "evidence": "Line 5"},
+        {"text": "All required boilerplate fields present", "passed": true, "evidence": "scripttarget: 0, pswd: \"\", runas: DBotWeakRole, engineinfo: {}, mainengineinfo: {}, enabled: true"},
+        {"text": "Docker image is pinned to a specific 3.12.x version", "passed": true, "evidence": "demisto/python3:3.12.12.6947692"},
+        {"text": "No content-pack-only fields present", "passed": true, "evidence": "No fromversion, marketplaces, tests, timeout"},
+        {"text": "Every arg entry has supportedModules: [] as first key", "passed": true, "evidence": "Line 108"},
+        {"text": "Outputs include contextPath, description, and type", "passed": true, "evidence": "All 3 outputs correct"},
+        {"text": "Script outputs both a numeric score and a label", "passed": true, "evidence": "Score (number) and Label (string) outputs present"}
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "alert-context-ip-enrichment",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 65.8,
+        "tokens": 39729,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Uses demisto.alert() not demisto.incident()", "passed": true, "evidence": "alert = demisto.alert() on line 45"},
+        {"text": "CustomFields is flattened after demisto.alert()", "passed": true, "evidence": "cf = alert.pop('CustomFields', {}); alert.update(cf) on lines 46-47"},
+        {"text": "Uses execute_command() not demisto.executeCommand()", "passed": true, "evidence": "execute_command('ip', {'ip': ip}) on line 18"},
+        {"text": "register_module_line start is first line of script block", "passed": true, "evidence": "Line 9"},
+        {"text": "register_module_line end is last line of script block", "passed": true, "evidence": "Line 108"},
+        {"text": "vcShouldKeepItemLegacyProdMachine: false is present", "passed": true, "evidence": "Line 5"},
+        {"text": "All required boilerplate fields present", "passed": true, "evidence": "All present"},
+        {"text": "No content-pack-only fields present", "passed": true, "evidence": "None found"}
+      ],
+      "notes": ["Script uses kebab-case name 'enrich-alert-ips' per skill convention"]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "alert-context-ip-enrichment",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 6,
+        "failed": 2,
+        "total": 8,
+        "time_seconds": 63.8,
+        "tokens": 37073,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Uses demisto.alert() not demisto.incident()", "passed": true, "evidence": "alert = demisto.alert() on line 63 — model knows XSIAM requires demisto.alert()"},
+        {"text": "CustomFields is flattened after demisto.alert()", "passed": false, "evidence": "No CustomFields flattening — code calls alert.get('src_ip') directly without popping CustomFields first. src_ip/dest_ip in CustomFields would silently return empty strings."},
+        {"text": "Uses execute_command() not demisto.executeCommand()", "passed": false, "evidence": "Uses demisto.executeCommand('ip', {'ip': ip}) on line 18 with manual isError() checking rather than execute_command() which raises automatically"},
+        {"text": "register_module_line start is first line of script block", "passed": true, "evidence": "Line 9"},
+        {"text": "register_module_line end is last line of script block", "passed": true, "evidence": "Line 131"},
+        {"text": "vcShouldKeepItemLegacyProdMachine: false is present", "passed": true, "evidence": "Line 5"},
+        {"text": "All required boilerplate fields present", "passed": true, "evidence": "All present"},
+        {"text": "No content-pack-only fields present", "passed": true, "evidence": "None found"}
+      ],
+      "notes": ["Script uses PascalCase name 'EnrichAlertIPs' — without skill, model defaults to PascalCase"]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "extract-domain-transformer",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 63.4,
+        "tokens": 39246,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "transformer tag is present in tags list", "passed": true, "evidence": "Line 69: - transformer"},
+        {"text": "Script has a 'value' argument (transformer convention)", "passed": true, "evidence": "Line 79: name: value with default: true"},
+        {"text": "register_module_line start is first line of script block", "passed": true, "evidence": "Line 9"},
+        {"text": "register_module_line end is last line of script block", "passed": true, "evidence": "Line 65"},
+        {"text": "vcShouldKeepItemLegacyProdMachine: false is present", "passed": true, "evidence": "Line 5"},
+        {"text": "All required boilerplate fields present", "passed": true, "evidence": "All present"},
+        {"text": "No content-pack-only fields present", "passed": true, "evidence": "None found"},
+        {"text": "Python actually parses/extracts the domain (not just returns input)", "passed": true, "evidence": "Uses urllib.parse.urlparse, prepends https:// for schemeless URLs, strips port"}
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "extract-domain-transformer",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 51.1,
+        "tokens": 36053,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "transformer tag is present in tags list", "passed": true, "evidence": "Line 79: - transformer — model knows transformer convention without skill"},
+        {"text": "Script has a 'value' argument (transformer convention)", "passed": true, "evidence": "Line 91: name: value with default: true"},
+        {"text": "register_module_line start is first line of script block", "passed": true, "evidence": "Line 9"},
+        {"text": "register_module_line end is last line of script block", "passed": true, "evidence": "Line 76"},
+        {"text": "vcShouldKeepItemLegacyProdMachine: false is present", "passed": true, "evidence": "Line 5"},
+        {"text": "All required boilerplate fields present", "passed": true, "evidence": "All present"},
+        {"text": "No content-pack-only fields present", "passed": true, "evidence": "None found"},
+        {"text": "Python actually parses/extracts the domain (not just returns input)", "passed": true, "evidence": "Uses urllib.parse.urlparse with .hostname, prepends https:// for schemeless, lowercases result"}
+      ],
+      "notes": []
+    }
+  ],
+
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 65.4, "stddev": 1.5, "min": 63.4, "max": 66.9},
+      "tokens": {"mean": 39529, "stddev": 206, "min": 39246, "max": 39729}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.917, "stddev": 0.144, "min": 0.75, "max": 1.0},
+      "time_seconds": {"mean": 58.1, "stddev": 5.3, "min": 51.1, "max": 63.8},
+      "tokens": {"mean": 37381, "stddev": 1230, "min": 36053, "max": 39018}
+    },
+    "delta": {
+      "pass_rate": "+0.083",
+      "time_seconds": "+7.3",
+      "tokens": "+2148"
+    }
+  },
+
+  "notes": [
+    "Assertions on structural boilerplate (vcShouldKeep, required fields, docker pinning, no forbidden fields, register_module_line) pass 100% in BOTH configurations — model knows these conventions without the skill. These assertions are non-discriminating for measuring skill value.",
+    "Skill value is concentrated in eval 2 (alert-context-ip-enrichment): without the skill, the model omits CustomFields flattening and uses demisto.executeCommand() instead of execute_command(). Both are subtle XSIAM-specific patterns the skill correctly teaches.",
+    "Naming convention is a qualitative difference not captured in assertions: with_skill uses kebab-case ('enrich-alert-ips'), without_skill uses PascalCase ('EnrichAlertIPs'). This aligns with the plugin's custom automation naming convention.",
+    "Evals 1 and 3 show no measurable difference between skill and baseline — both produce correct, importable YAML. The skill adds ~7s and ~2100 tokens of overhead on these tasks without correctness benefit.",
+    "Eval 2 without_skill demonstrates a real bug: omitting CustomFields flattening means src_ip/dest_ip in CustomFields would silently return empty strings, causing the script to silently no-op on many real XSIAM alerts."
+  ]
+}

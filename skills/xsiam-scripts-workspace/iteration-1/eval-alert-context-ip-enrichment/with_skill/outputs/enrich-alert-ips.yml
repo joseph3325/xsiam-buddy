@@ -1,0 +1,135 @@
+commonfields:
+  id: enrich-alert-ips
+  version: -1
+
+vcShouldKeepItemLegacyProdMachine: false
+
+name: enrich-alert-ips
+script: |-
+  register_module_line('enrich-alert-ips', 'start', __line__())
+
+  import demistomock as demisto
+  from CommonServerPython import *
+  from CommonServerUserPython import *
+
+
+  def enrich_ip(ip: str) -> dict:
+      """Call the ip enrichment command and return results for a single IP."""
+      result = execute_command('ip', {'ip': ip})
+      if isinstance(result, list):
+          # execute_command may return a list; take the first entry's Contents
+          return result[0] if result else {}
+      return result or {}
+
+
+  def build_summary_row(ip: str, role: str, enrichment_data) -> dict:
+      """Build a flat summary dict for a single IP enrichment result."""
+      if isinstance(enrichment_data, list):
+          enrichment_data = enrichment_data[0] if enrichment_data else {}
+      if not isinstance(enrichment_data, dict):
+          enrichment_data = {}
+
+      return {
+          'IP': ip,
+          'Role': role,
+          'ASN': enrichment_data.get('ASN') or enrichment_data.get('asn', ''),
+          'Organization': enrichment_data.get('Organization') or enrichment_data.get('org', ''),
+          'Country': enrichment_data.get('Country') or enrichment_data.get('country', ''),
+          'Vendor': enrichment_data.get('Vendor') or enrichment_data.get('vendor', ''),
+          'Score': enrichment_data.get('DBotScore', {}).get('Score', '') if isinstance(enrichment_data.get('DBotScore'), dict) else enrichment_data.get('score', ''),
+      }
+
+
+  def main():
+      try:
+          alert = demisto.alert()
+          cf = alert.pop('CustomFields', {})
+          alert.update(cf)
+
+          src_ip = alert.get('src_ip', '')
+          dest_ip = alert.get('dest_ip', '')
+
+          if not src_ip and not dest_ip:
+              return_results(CommandResults(
+                  readable_output='No src_ip or dest_ip found in the current alert.',
+                  outputs_prefix='IPEnrichmentSummary',
+                  outputs={'Result': [], 'Message': 'No IPs found in alert context'}
+              ))
+              return
+
+          results = []
+          summary_rows = []
+          errors = []
+
+          if src_ip:
+              try:
+                  src_data = enrich_ip(src_ip)
+                  row = build_summary_row(src_ip, 'Source', src_data)
+                  summary_rows.append(row)
+                  results.append({'ip': src_ip, 'role': 'Source', 'enrichment': src_data})
+              except Exception as e:
+                  errors.append(f'src_ip ({src_ip}): {str(e)}')
+                  summary_rows.append({'IP': src_ip, 'Role': 'Source', 'Error': str(e)})
+
+          if dest_ip:
+              try:
+                  dest_data = enrich_ip(dest_ip)
+                  row = build_summary_row(dest_ip, 'Destination', dest_data)
+                  summary_rows.append(row)
+                  results.append({'ip': dest_ip, 'role': 'Destination', 'enrichment': dest_data})
+              except Exception as e:
+                  errors.append(f'dest_ip ({dest_ip}): {str(e)}')
+                  summary_rows.append({'IP': dest_ip, 'Role': 'Destination', 'Error': str(e)})
+
+          readable = tableToMarkdown(
+              'IP Enrichment Summary',
+              summary_rows,
+              headers=['IP', 'Role', 'ASN', 'Organization', 'Country', 'Vendor', 'Score'],
+              removeNull=True
+          )
+
+          if errors:
+              readable += '\n**Enrichment errors:**\n' + '\n'.join(f'- {e}' for e in errors)
+
+          return_results(CommandResults(
+              readable_output=readable,
+              outputs_prefix='IPEnrichmentSummary',
+              outputs_key_field='ip',
+              outputs={'Result': results}
+          ))
+
+      except Exception as e:
+          return_error(f'Failed to execute enrich-alert-ips. Error: {str(e)}')
+
+
+  if __name__ in ('__main__', '__builtin__', 'builtins'):
+      main()
+
+  register_module_line('enrich-alert-ips', 'end', __line__())
+
+type: python
+tags:
+  - Enrichment
+  - Utility
+comment: |
+  Reads the src_ip and dest_ip fields from the current XSIAM alert context and calls
+  the ip enrichment command on each. Returns a Markdown summary table with ASN,
+  organization, country, vendor, and score for each IP, and stores the enrichment
+  results under IPEnrichmentSummary.Result in the incident context.
+enabled: true
+
+args: []
+
+outputs:
+  - contextPath: IPEnrichmentSummary.Result
+    description: List of enrichment result objects, one per IP enriched. Each entry contains the IP address, its role (Source or Destination), and the raw enrichment data returned by the ip command.
+    type: array
+
+scripttarget: 0
+subtype: python3
+pswd: ""
+runonce: false
+dockerimage: demisto/python3:3.12.12.6947692
+runas: DBotWeakRole
+engineinfo: {}
+mainengineinfo: {}

@@ -1,0 +1,157 @@
+{
+  "skill_name": "xsiam-scripts",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "normalize-alert-severity",
+      "prompt": "Write an XSIAM script called NormalizeAlertSeverity that takes an alert severity string (like 'high', 'CRITICAL', '3') and maps it to a numeric score (1–4). Output the normalized severity number and label to context.",
+      "expected_output": "A valid XSIAM-importable .yml file with embedded Python that maps severity strings to numeric scores (1-4) and labels. Must follow XSIAM YAML field ordering, include register_module_line calls, proper args/outputs, and all required fields.",
+      "assertions": [
+        {
+          "id": "rml-start",
+          "name": "register_module_line start is first line of script block",
+          "check": "The first non-empty line inside the script: |- block is register_module_line('NormalizeAlertSeverity', 'start', __line__())"
+        },
+        {
+          "id": "rml-end",
+          "name": "register_module_line end is last line of script block",
+          "check": "The last non-empty line inside the script: |- block is register_module_line('NormalizeAlertSeverity', 'end', __line__())"
+        },
+        {
+          "id": "vcShouldKeep",
+          "name": "vcShouldKeepItemLegacyProdMachine: false is present",
+          "check": "The YAML contains vcShouldKeepItemLegacyProdMachine: false as a top-level field"
+        },
+        {
+          "id": "required-fields",
+          "name": "All required boilerplate fields present",
+          "check": "YAML contains: scripttarget: 0, pswd: \"\", runas: DBotWeakRole, engineinfo: {}, mainengineinfo: {}, enabled: true"
+        },
+        {
+          "id": "docker-pinned",
+          "name": "Docker image is pinned to a specific 3.12.x version",
+          "check": "dockerimage field contains 'python3:3.12' and does not contain ':latest'"
+        },
+        {
+          "id": "no-forbidden-fields",
+          "name": "No content-pack-only fields present",
+          "check": "YAML does not contain fromversion, marketplaces, tests, or timeout as top-level keys"
+        },
+        {
+          "id": "args-supportedModules",
+          "name": "Every arg entry has supportedModules: [] as first key",
+          "check": "Each item under args: starts with supportedModules: []"
+        },
+        {
+          "id": "outputs-have-contextPath",
+          "name": "Outputs include contextPath, description, and type",
+          "check": "Each item under outputs: has contextPath, description, and type fields"
+        },
+        {
+          "id": "severity-logic",
+          "name": "Script outputs both a numeric score and a label",
+          "check": "The Python code handles mapping to a number 1-4 AND a string label, and both appear in the outputs section"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "eval_name": "alert-context-ip-enrichment",
+      "prompt": "Write an XSIAM script that reads the current alert's src_ip and dest_ip fields and calls the ip enrichment command on both. Return a summary of the results.",
+      "expected_output": "A valid XSIAM-importable .yml file whose Python uses demisto.alert() to get the alert, flattens CustomFields, calls execute_command('ip', ...) for both IPs, and returns results. Must follow all XSIAM YAML conventions.",
+      "assertions": [
+        {
+          "id": "uses-demisto-alert",
+          "name": "Uses demisto.alert() not demisto.incident()",
+          "check": "Python code contains demisto.alert() and does NOT contain demisto.incident()"
+        },
+        {
+          "id": "flattens-customfields",
+          "name": "CustomFields is flattened after demisto.alert()",
+          "check": "Python code contains both pop('CustomFields', {}) and issue.update(cf) (or equivalent flattening pattern) immediately after calling demisto.alert()"
+        },
+        {
+          "id": "uses-execute-command",
+          "name": "Uses execute_command() not demisto.executeCommand()",
+          "check": "Python code uses execute_command('ip', ...) and does NOT use demisto.executeCommand for the IP enrichment calls"
+        },
+        {
+          "id": "rml-start",
+          "name": "register_module_line start is first line of script block",
+          "check": "The first non-empty line inside the script: |- block is a register_module_line(..., 'start', __line__()) call"
+        },
+        {
+          "id": "rml-end",
+          "name": "register_module_line end is last line of script block",
+          "check": "The last non-empty line inside the script: |- block is a register_module_line(..., 'end', __line__()) call"
+        },
+        {
+          "id": "vcShouldKeep",
+          "name": "vcShouldKeepItemLegacyProdMachine: false is present",
+          "check": "The YAML contains vcShouldKeepItemLegacyProdMachine: false as a top-level field"
+        },
+        {
+          "id": "required-fields",
+          "name": "All required boilerplate fields present",
+          "check": "YAML contains: scripttarget: 0, pswd: \"\", runas: DBotWeakRole, engineinfo: {}, mainengineinfo: {}, enabled: true"
+        },
+        {
+          "id": "no-forbidden-fields",
+          "name": "No content-pack-only fields present",
+          "check": "YAML does not contain fromversion, marketplaces, tests, or timeout as top-level keys"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "eval_name": "extract-domain-transformer",
+      "prompt": "Write an XSIAM transformer script called ExtractDomain that takes a URL string and extracts just the domain from it.",
+      "expected_output": "A valid XSIAM-importable .yml file with transformer in its tags, a 'value' argument (conventional for transformers), Python that parses a domain from a URL, and all required XSIAM YAML structure.",
+      "assertions": [
+        {
+          "id": "transformer-tag",
+          "name": "transformer tag is present in tags list",
+          "check": "The tags field contains 'transformer'"
+        },
+        {
+          "id": "value-argument",
+          "name": "Script has a 'value' argument (transformer convention)",
+          "check": "The args section contains an argument named 'value'"
+        },
+        {
+          "id": "rml-start",
+          "name": "register_module_line start is first line of script block",
+          "check": "The first non-empty line inside the script: |- block is register_module_line('ExtractDomain', 'start', __line__())"
+        },
+        {
+          "id": "rml-end",
+          "name": "register_module_line end is last line of script block",
+          "check": "The last non-empty line inside the script: |- block is register_module_line('ExtractDomain', 'end', __line__())"
+        },
+        {
+          "id": "vcShouldKeep",
+          "name": "vcShouldKeepItemLegacyProdMachine: false is present",
+          "check": "The YAML contains vcShouldKeepItemLegacyProdMachine: false as a top-level field"
+        },
+        {
+          "id": "required-fields",
+          "name": "All required boilerplate fields present",
+          "check": "YAML contains: scripttarget: 0, pswd: \"\", runas: DBotWeakRole, engineinfo: {}, mainengineinfo: {}, enabled: true"
+        },
+        {
+          "id": "no-forbidden-fields",
+          "name": "No content-pack-only fields present",
+          "check": "YAML does not contain fromversion, marketplaces, tests, or timeout as top-level keys"
+        },
+        {
+          "id": "domain-extraction-logic",
+          "name": "Python extracts domain from URL (not just returns input)",
+          "check": "Python code uses urllib.parse or similar to actually parse/extract the domain component, not just return the input string"
+        }
+      ],
+      "files": []
+    }
+  ]
+}

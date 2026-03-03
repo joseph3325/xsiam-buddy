@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "normalize-alert-severity",
+  "prompt": "Write an XSIAM script called NormalizeAlertSeverity that takes an alert severity string (like 'high', 'CRITICAL', '3') and maps it to a numeric score (1–4). Output the normalized severity number and label to context.",
+  "assertions": [
+    {"id": "rml-start", "text": "register_module_line start is first line of script block"},
+    {"id": "rml-end", "text": "register_module_line end is last line of script block"},
+    {"id": "vcShouldKeep", "text": "vcShouldKeepItemLegacyProdMachine: false is present"},
+    {"id": "required-fields", "text": "All required boilerplate fields present (scripttarget, pswd, runas, engineinfo, mainengineinfo, enabled)"},
+    {"id": "docker-pinned", "text": "Docker image is pinned to a specific 3.12.x version"},
+    {"id": "no-forbidden-fields", "text": "No content-pack-only fields present (fromversion, marketplaces, tests, timeout)"},
+    {"id": "args-supportedModules", "text": "Every arg entry has supportedModules: [] as first key"},
+    {"id": "outputs-have-contextPath", "text": "Outputs include contextPath, description, and type"},
+    {"id": "severity-logic", "text": "Script outputs both a numeric score and a label"}
+  ]
+}

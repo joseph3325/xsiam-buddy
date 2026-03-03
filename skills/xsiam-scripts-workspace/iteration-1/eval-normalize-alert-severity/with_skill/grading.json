@@ -1,0 +1,58 @@
+{
+  "expectations": [
+    {
+      "text": "register_module_line start is first line of script block",
+      "passed": true,
+      "evidence": "Line 9 of NormalizeAlertSeverity.yml: register_module_line('NormalizeAlertSeverity', 'start', __line__()) — first non-empty line inside script: |-"
+    },
+    {
+      "text": "register_module_line end is last line of script block",
+      "passed": true,
+      "evidence": "Line 91: register_module_line('NormalizeAlertSeverity', 'end', __line__()) — last line before the closing of the script block"
+    },
+    {
+      "text": "vcShouldKeepItemLegacyProdMachine: false is present",
+      "passed": true,
+      "evidence": "Line 5: vcShouldKeepItemLegacyProdMachine: false"
+    },
+    {
+      "text": "All required boilerplate fields present (scripttarget, pswd, runas, engineinfo, mainengineinfo, enabled)",
+      "passed": true,
+      "evidence": "scripttarget: 0 (line 134), pswd: \"\" (line 137), runas: DBotWeakRole (line 139), engineinfo: {} (line 140), mainengineinfo: {} (line 141), enabled: true (line 111)"
+    },
+    {
+      "text": "Docker image is pinned to a specific 3.12.x version",
+      "passed": true,
+      "evidence": "Line 138: dockerimage: demisto/python3:3.12.12.6947692"
+    },
+    {
+      "text": "No content-pack-only fields present (fromversion, marketplaces, tests, timeout)",
+      "passed": true,
+      "evidence": "Searched full YAML — none of fromversion, marketplaces, tests, timeout are present"
+    },
+    {
+      "text": "Every arg entry has supportedModules: [] as first key",
+      "passed": true,
+      "evidence": "Line 114: - supportedModules: [] is the first key on the only arg entry"
+    },
+    {
+      "text": "Outputs include contextPath, description, and type",
+      "passed": true,
+      "evidence": "All 3 outputs (Input, Score, Label) have contextPath, description, and type fields"
+    },
+    {
+      "text": "Script outputs both a numeric score and a label",
+      "passed": true,
+      "evidence": "SEVERITY_MAP maps inputs to (int, str) tuples; outputs NormalizeAlertSeverity.Score (type: number) and NormalizeAlertSeverity.Label (type: string)"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "executor_duration_seconds": 66.9
+  }
+}

@@ -1,0 +1,177 @@
+commonfields:
+  id: EnrichAlertIPs
+  version: -1
+
+vcShouldKeepItemLegacyProdMachine: false
+
+name: EnrichAlertIPs
+script: |-
+  register_module_line('EnrichAlertIPs', 'start', __line__())
+
+  import demistomock as demisto
+  from CommonServerPython import *
+  from CommonServerUserPython import *
+
+
+  def enrich_ip(ip: str) -> list:
+      """Call the ip enrichment command and return the raw results list."""
+      return demisto.executeCommand('ip', {'ip': ip})
+
+
+  def extract_enrichment_summary(ip: str, results: list) -> dict:
+      """Extract key fields from ip command results into a flat summary dict."""
+      summary: dict = {'IP': ip, 'Score': 'N/A', 'Vendor': 'N/A', 'ASN': 'N/A', 'Country': 'N/A', 'Error': None}
+
+      if not results:
+          summary['Error'] = 'No results returned'
+          return summary
+
+      first = results[0]
+      if isError(first):
+          summary['Error'] = first.get('Contents', 'Unknown error')
+          return summary
+
+      # DBotScore lives in the EntryContext under DBotScore key
+      entry_context = first.get('EntryContext') or {}
+      dbot_list = entry_context.get('DBotScore(val.Indicator && val.Indicator == obj.Indicator)', [])
+      if isinstance(dbot_list, dict):
+          dbot_list = [dbot_list]
+
+      for dbot in dbot_list:
+          if dbot.get('Indicator') == ip:
+              score_map = {0: 'Unknown', 1: 'Good', 2: 'Suspicious', 3: 'Bad'}
+              summary['Score'] = score_map.get(dbot.get('Score', 0), str(dbot.get('Score', 0)))
+              summary['Vendor'] = dbot.get('Vendor', 'N/A')
+              break
+
+      # IP geo / ASN lives under IP(val.Address && val.Address == obj.Address)
+      ip_list = entry_context.get('IP(val.Address && val.Address == obj.Address)', [])
+      if isinstance(ip_list, dict):
+          ip_list = [ip_list]
+
+      for ip_entry in ip_list:
+          if ip_entry.get('Address') == ip:
+              summary['ASN'] = ip_entry.get('ASN', 'N/A')
+              summary['Country'] = ip_entry.get('Geo', {}).get('Country', 'N/A') if isinstance(ip_entry.get('Geo'), dict) else ip_entry.get('Geo', 'N/A')
+              break
+
+      return summary
+
+
+  def main():
+      try:
+          alert = demisto.alert()
+          if not alert:
+              return_error('Could not retrieve alert context. Ensure this script is run within an XSIAM alert.')
+
+          src_ip = alert.get('src_ip', '').strip()
+          dest_ip = alert.get('dest_ip', '').strip()
+
+          if not src_ip and not dest_ip:
+              return_error('Neither src_ip nor dest_ip is populated in the current alert.')
+
+          summaries = []
+          all_enrichment_results = []
+
+          for label, ip in [('Source IP', src_ip), ('Destination IP', dest_ip)]:
+              if not ip:
+                  demisto.debug(f'EnrichAlertIPs: {label} is empty — skipping.')
+                  summaries.append({'Role': label, 'IP': '(not set)', 'Score': 'N/A', 'Vendor': 'N/A', 'ASN': 'N/A', 'Country': 'N/A', 'Error': None})
+                  continue
+
+              demisto.debug(f'EnrichAlertIPs: enriching {label} = {ip}')
+              raw = enrich_ip(ip)
+              summary = extract_enrichment_summary(ip, raw)
+              summary['Role'] = label
+              summaries.append(summary)
+
+              # Collect non-error raw entries for passthrough context writing
+              for entry in (raw or []):
+                  if not isError(entry):
+                      all_enrichment_results.append(entry)
+
+          # Build readable output table
+          headers = ['Role', 'IP', 'Score', 'Vendor', 'ASN', 'Country', 'Error']
+          readable = tableToMarkdown('Alert IP Enrichment Summary', summaries, headers=headers, removeNull=True)
+
+          # Structured output for context
+          output_data = [
+              {
+                  'Role': s.get('Role'),
+                  'IP': s.get('IP'),
+                  'Score': s.get('Score'),
+                  'Vendor': s.get('Vendor'),
+                  'ASN': s.get('ASN'),
+                  'Country': s.get('Country'),
+                  'Error': s.get('Error'),
+              }
+              for s in summaries
+          ]
+
+          return_results(CommandResults(
+              readable_output=readable,
+              outputs_prefix='EnrichAlertIPs',
+              outputs_key_field='IP',
+              outputs=output_data,
+          ))
+
+          # Also pass through the raw enrichment entries so indicator context
+          # (DBotScore, IP, etc.) is written into the investigation context by
+          # the platform's standard entry-context machinery.
+          if all_enrichment_results:
+              demisto.results(all_enrichment_results)
+
+      except Exception as e:
+          return_error(f'EnrichAlertIPs failed: {str(e)}')
+
+
+  if __name__ in ('__main__', '__builtin__', 'builtins'):
+      main()
+
+  register_module_line('EnrichAlertIPs', 'end', __line__())
+
+type: python
+tags:
+  - Enrichment
+  - Utility
+comment: |
+  Reads the src_ip and dest_ip fields from the current XSIAM alert, calls the
+  platform 'ip' enrichment command on each populated address, and returns a
+  consolidated Markdown summary table together with structured context output
+  under EnrichAlertIPs. Designed to run as an automation step inside an XSIAM
+  playbook or directly from the alert war room.
+enabled: true
+
+args: []
+
+outputs:
+  - contextPath: EnrichAlertIPs.Role
+    description: Whether this entry relates to the Source IP or Destination IP
+    type: string
+  - contextPath: EnrichAlertIPs.IP
+    description: The IP address that was enriched
+    type: string
+  - contextPath: EnrichAlertIPs.Score
+    description: Human-readable DBotScore verdict (Unknown / Good / Suspicious / Bad)
+    type: string
+  - contextPath: EnrichAlertIPs.Vendor
+    description: The enrichment vendor that produced the score
+    type: string
+  - contextPath: EnrichAlertIPs.ASN
+    description: Autonomous System Number associated with the IP
+    type: string
+  - contextPath: EnrichAlertIPs.Country
+    description: Geographic country associated with the IP
+    type: string
+  - contextPath: EnrichAlertIPs.Error
+    description: Error message if enrichment failed for this IP, otherwise null
+    type: string
+
+scripttarget: 0
+subtype: python3
+pswd: ""
+runonce: false
+dockerimage: demisto/python3:3.12.12.6947692
+runas: DBotWeakRole
+engineinfo: {}
+mainengineinfo: {}

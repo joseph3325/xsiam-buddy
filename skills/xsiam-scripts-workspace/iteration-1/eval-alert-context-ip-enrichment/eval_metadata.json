@@ -1,0 +1,15 @@
+{
+  "eval_id": 2,
+  "eval_name": "alert-context-ip-enrichment",
+  "prompt": "Write an XSIAM script that reads the current alert's src_ip and dest_ip fields and calls the ip enrichment command on both. Return a summary of the results.",
+  "assertions": [
+    {"id": "uses-demisto-alert", "text": "Uses demisto.alert() not demisto.incident()"},
+    {"id": "flattens-customfields", "text": "CustomFields is flattened after demisto.alert()"},
+    {"id": "uses-execute-command", "text": "Uses execute_command() not demisto.executeCommand()"},
+    {"id": "rml-start", "text": "register_module_line start is first line of script block"},
+    {"id": "rml-end", "text": "register_module_line end is last line of script block"},
+    {"id": "vcShouldKeep", "text": "vcShouldKeepItemLegacyProdMachine: false is present"},
+    {"id": "required-fields", "text": "All required boilerplate fields present"},
+    {"id": "no-forbidden-fields", "text": "No content-pack-only fields present"}
+  ]
+}

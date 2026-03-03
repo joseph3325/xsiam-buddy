@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "transformer tag is present in tags list",
+      "passed": true,
+      "evidence": "Line 79: - transformer (alongside - Utility) — model knew the transformer tag convention without the skill"
+    },
+    {
+      "text": "Script has a 'value' argument (transformer convention)",
+      "passed": true,
+      "evidence": "Line 91: name: value, with default: true set"
+    },
+    {
+      "text": "register_module_line start is first line of script block",
+      "passed": true,
+      "evidence": "Line 9: register_module_line('ExtractDomain', 'start', __line__())"
+    },
+    {
+      "text": "register_module_line end is last line of script block",
+      "passed": true,
+      "evidence": "Line 76: register_module_line('ExtractDomain', 'end', __line__())"
+    },
+    {
+      "text": "vcShouldKeepItemLegacyProdMachine: false is present",
+      "passed": true,
+      "evidence": "Line 5: vcShouldKeepItemLegacyProdMachine: false"
+    },
+    {
+      "text": "All required boilerplate fields present",
+      "passed": true,
+      "evidence": "scripttarget: 0 (line 105), pswd: \"\" (line 108), runas: DBotWeakRole (line 110), engineinfo: {} (line 111), mainengineinfo: {} (line 112), enabled: true (line 88)"
+    },
+    {
+      "text": "No content-pack-only fields present",
+      "passed": true,
+      "evidence": "Searched full YAML — fromversion, marketplaces, tests, timeout are all absent"
+    },
+    {
+      "text": "Python actually parses/extracts the domain (not just returns input)",
+      "passed": true,
+      "evidence": "Uses urllib.parse.urlparse with .hostname (strips port and lowercases), prepends https:// for schemeless URLs"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "executor_duration_seconds": 51.1
+  }
+}
