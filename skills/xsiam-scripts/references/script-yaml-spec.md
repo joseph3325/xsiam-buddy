@@ -342,10 +342,68 @@ tags:
 
 ### Notes
 
-- A script with no functional tag is only accessible by name (e.g., via `execute_command()` in a playbook task or another script).
+- A script with no functional tag is only accessible by name (e.g., via an Execute Script task in a playbook, or `demisto.executeCommand('ScriptName', args)` from another script).
 - `transformer` and `filter` scripts receive their input via the `value` argument by convention.
 - `field-display` and `dynamic-section` scripts typically return HTML or Markdown for rendering.
 - `widget` scripts must return a structure understood by the dashboard renderer.
+
+### Field-Change-Triggered Script: Arg Structure
+
+When a script is assigned as a `field-change-triggered` handler for a layout field, XSIAM passes the field change event data as the script's arguments. Use `demisto.args()` to access the payload.
+
+**Key fields:**
+
+| Field | Description |
+|-------|-------------|
+| `name` | Human-readable field name (e.g., `"Resolution Reason"`) |
+| `cliName` | CLI path to the field (e.g., `"status.resolution_reason"`) |
+| `new` | The new value after the change |
+| `old` | The previous value (`null` if the field was previously unset) |
+| `type` | How XSIAM stores the field internally (e.g., `"multiSelect"`, `"shortText"`) |
+| `selectValues` | All possible option values for select-type fields |
+
+**Example payload** (Resolution Reason field — a single-select field in the UI):
+
+```json
+{
+  "associatedToAll": true,
+  "associatedTypes": null,
+  "cliName": "status.resolution_reason",
+  "content": true,
+  "description": "",
+  "isReadOnly": false,
+  "name": "Resolution Reason",
+  "new": "STATUS_070_RESOLVED_OTHER",
+  "old": null,
+  "ownerOnly": false,
+  "placeholder": "",
+  "required": false,
+  "selectValues": [
+    "STATUS_040_RESOLVED_KNOWN_ISSUE",
+    "STATUS_050_RESOLVED_DUPLICATE",
+    "STATUS_060_RESOLVED_FALSE_POSITIVE",
+    "STATUS_070_RESOLVED_OTHER",
+    "STATUS_090_RESOLVED_TRUE_POSITIVE",
+    "STATUS_100_RESOLVED_SECURITY_TESTING",
+    "STATUS_080_RESOLVED_AUTO",
+    "STATUS_030_RESOLVED_THREAT_HANDLED",
+    "STATUS_240_RESOLVED_DISMISSED",
+    "STATUS_250_RESOLVED_FIXED",
+    "STATUS_130_RESOLVED_RISK_ACCEPTED"
+  ],
+  "system": false,
+  "type": "multiSelect",
+  "unmapped": false,
+  "useAsKpi": false,
+  "validationRegex": ""
+}
+```
+
+**Notes:**
+- The most useful fields are `new` (new value), `old` (previous value — `null` if first set), `name`, and `cliName`
+- `type` in the payload reflects XSIAM's internal field storage type; `"multiSelect"` may appear even for fields that are functionally single-select in the UI
+- `selectValues` lists all configured options for select-type fields — useful for validation or value mapping
+- `new` is `null` when the field is cleared
 
 ---
 
