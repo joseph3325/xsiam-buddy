@@ -59,12 +59,12 @@ outputs:
     description: The result
     type: string
 
-scripttarget: 0      # Required — always 0
+scripttarget: 0      # 0 = server-side (default); 1 = endpoint-side (XDR agent)
 subtype: python3
 pswd: ""             # Required — always empty string
 runonce: false
 dockerimage: demisto/python3:3.12.12.6947692   # Use latest 3.12 available in your tenant
-runas: DBotWeakRole  # Required — always DBotWeakRole
+runas: DBotWeakRole  # DBotWeakRole (default) or DBotRole (elevated permissions)
 engineinfo: {}       # Required — always empty map
 mainengineinfo: {}   # Required — always empty map
 ```
@@ -78,6 +78,8 @@ mainengineinfo: {}   # Required — always empty map
 - No `commands` array — the script itself is a single invocable unit
 - `comment` (not `description`) is the human-readable description field
 - `args` and `outputs` are top-level (not inside a command)
+- `scripttarget: 0` runs on the XSIAM server (default for all automation scripts). Use `scripttarget: 1` only for scripts that must execute directly on an endpoint via the XDR agent (e.g., forensic artifact collection, OS-level commands)
+- `runas: DBotWeakRole` is the default — restricted permissions (read context, return results). Use `runas: DBotRole` for scripts that need elevated permissions (create/modify incidents, change integration settings, manage context keys)
 
 ### Arg Field Reference
 
