@@ -150,7 +150,7 @@ def check_scan_command(args):
     )
 ```
 
-**How it works:** When `CommandResults` includes a `scheduled_command`, the platform schedules a re-invocation with the specified args after `next_run_in_seconds`. The script is stateless between invocations — pass any needed state via the args dict.
+**How it works:** When `CommandResults` includes a `scheduled_command`, the platform schedules a re-invocation with the specified args after `next_run_in_seconds`. The script is stateless between invocations — pass any needed state via the args dict. In scripts, wrap the call in `main()`: `return_results(check_scan_command(demisto.args()))`.
 
 ---
 

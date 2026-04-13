@@ -411,7 +411,7 @@ Widget scripts power dashboard and report widgets. They are the least common scr
 - Typically no arguments — pull data from context, API calls, or `demisto.executeCommand()`
 - Consult the XSIAM widget documentation for the expected return schema for each widget type
 
-**Number widget example return:**
+**Number widget example return** (assumes `import json` in script imports)**:**
 ```python
 return_results(json.dumps({
     "Type": 17,
