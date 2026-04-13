@@ -53,7 +53,10 @@ human_readable = tableToMarkdown(
     data,                              # list of dicts, or single dict
     headers=['ID', 'Name', 'Status'],  # subset/order of columns to show
     headerTransform=pascalToSpace,     # optional: transform header names
-    removeNull=True                    # optional: omit None values
+    removeNull=True,                   # optional: omit columns where all values are None
+    url_keys=['link', 'profile_url'],  # optional: auto-format as clickable markdown links
+    date_fields=['created', 'updated'],# optional: auto-format date strings
+    is_auto_json_transform=True        # optional: pretty-print nested dicts/lists
 )
 ```
 
@@ -96,6 +99,58 @@ def validate_inputs(args: dict) -> None:
     if limit is not None and (limit < 1 or limit > 1000):
         raise ValueError('limit must be between 1 and 1000')
 ```
+
+---
+
+## Async Operations (Polling)
+
+**Never use `time.sleep()`** — the platform will kill long-running scripts. For operations that take time to complete (scans, exports, batch jobs), use the `ScheduledCommand` pattern. The script exits after each check and the platform re-invokes it at the specified interval.
+
+```python
+from CommonServerPython import ScheduledCommand
+
+def check_scan_command(args):
+    scan_id = args.get('scan_id')
+
+    if not scan_id:
+        # First call: start the operation
+        scan_id = start_scan(args.get('target'))
+        scheduled_command = ScheduledCommand(
+            command='!my-check-scan',
+            args={'scan_id': scan_id},
+            next_run_in_seconds=30,
+            timeout_in_seconds=600
+        )
+        return CommandResults(
+            readable_output=f'Scan started: {scan_id}. Polling every 30s...',
+            scheduled_command=scheduled_command
+        )
+
+    # Subsequent calls: check status
+    result = get_scan_status(scan_id)
+
+    if result['status'] != 'completed':
+        scheduled_command = ScheduledCommand(
+            command='!my-check-scan',
+            args={'scan_id': scan_id},
+            next_run_in_seconds=30,
+            timeout_in_seconds=int(args.get('timeout', 600))
+        )
+        return CommandResults(
+            readable_output=f'Scan {scan_id} still running...',
+            scheduled_command=scheduled_command
+        )
+
+    # Done
+    return CommandResults(
+        readable_output=tableToMarkdown('Scan Results', [result]),
+        outputs_prefix='Vendor.Scan',
+        outputs_key_field='id',
+        outputs=result
+    )
+```
+
+**How it works:** When `CommandResults` includes a `scheduled_command`, the platform schedules a re-invocation with the specified args after `next_run_in_seconds`. The script is stateless between invocations — pass any needed state via the args dict.
 
 ---
 
@@ -340,3 +395,61 @@ return CommandResults(
 - Use `demisto.alert()` in XSIAM alert-context scripts; `demisto.incident()` in XSOAR
 - Python 3.8+ compatible code; prefer standard library over third-party packages
 - Pin docker images to specific versions — never `:latest`
+
+---
+
+## Unit Testing
+
+Scripts are tested outside Docker using `pytest` and the `demistomock` layer. Mock platform calls, invoke `main()`, and assert on the results.
+
+```python
+# FormatData_test.py
+import demistomock as demisto
+from FormatData import main
+
+
+def test_format_json(mocker):
+    mocker.patch.object(demisto, 'args', return_value={
+        'input_data': '{"key": "value"}',
+        'output_format': 'json'
+    })
+    mock_return = mocker.patch('FormatData.return_results')
+
+    main()
+
+    result = mock_return.call_args[0][0]
+    assert result.outputs['Format'] == 'json'
+    assert '"key"' in result.outputs['Result']
+
+
+def test_format_markdown(mocker):
+    mocker.patch.object(demisto, 'args', return_value={
+        'input_data': '[{"id": 1, "name": "test"}]',
+        'output_format': 'markdown'
+    })
+    mock_return = mocker.patch('FormatData.return_results')
+
+    main()
+
+    result = mock_return.call_args[0][0]
+    assert result.outputs['Format'] == 'markdown'
+
+
+def test_missing_input(mocker):
+    mocker.patch.object(demisto, 'args', return_value={
+        'input_data': '',
+        'output_format': 'json'
+    })
+    mock_error = mocker.patch('FormatData.return_error')
+
+    main()
+
+    assert mock_error.called
+```
+
+**Key patterns:**
+- Import `demistomock as demisto` in the test file — same mock layer the script uses
+- `mocker.patch.object(demisto, 'args', ...)` to control input
+- `mocker.patch('ScriptName.return_results')` to capture output without platform side effects
+- `mocker.patch('ScriptName.return_error')` to verify error handling
+- Run with: `pytest ScriptName_test.py -v`
