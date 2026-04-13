@@ -189,7 +189,7 @@ counting or grouping events over a time window.
 {
   "execution_mode": "SCHEDULED",
   "search_window": "1 hours",
-  "simple_schedule": "Every 5 minutes",
+  "simple_schedule": "5 minutes",
   "timezone": "UTC",
   "crontab": "*/5 * * * *"
 }
@@ -223,14 +223,14 @@ value. Both must be present and consistent for SCHEDULED rules.
 
 | simple_schedule | crontab |
 |-----------------|---------|
-| `"Every 5 minutes"` | `"*/5 * * * *"` |
-| `"Every 10 minutes"` | `"*/10 * * * *"` |
-| `"Every 15 minutes"` | `"*/15 * * * *"` |
-| `"Every 30 minutes"` | `"*/30 * * * *"` |
-| `"Every 1 hours"` | `"0 */1 * * *"` |
-| `"Every 4 hours"` | `"0 */4 * * *"` |
-| `"Every 12 hours"` | `"0 */12 * * *"` |
-| `"Every 24 hours"` | `"0 0 * * *"` |
+| `"5 minutes"` | `"*/5 * * * *"` |
+| `"10 minutes"` | `"*/10 * * * *"` |
+| `"15 minutes"` | `"*/15 * * * *"` |
+| `"30 minutes"` | `"*/30 * * * *"` |
+| `"1 hour"` | `"*/60 * * * *"` |
+| `"4 hours"` | `"0 */4 * * *"` |
+| `"12 hours"` | `"0 */12 * * *"` |
+| `"24 hours"` | `"0 0 * * *"` |
 
 ---
 

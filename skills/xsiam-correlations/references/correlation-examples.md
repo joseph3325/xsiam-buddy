@@ -4,7 +4,7 @@ Complete, production-ready correlation rule examples in JSON export format. Each
 demonstrates a different execution mode and severity pattern, matching the exact schema
 XSIAM uses when exporting correlation rules via API.
 
-All examples use the canonical 28-field order that XSIAM exports produce.
+All examples use the canonical 29-field order that XSIAM exports produce.
 
 ---
 
