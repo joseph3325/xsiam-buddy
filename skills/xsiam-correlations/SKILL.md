@@ -3,18 +3,18 @@ name: xsiam-correlations
 description: >
   This skill should be used when the user asks to "create a correlation rule",
   "build a detection rule", "write a detection", "XSIAM alert rule",
-  "correlation YAML", "detection engineering", "build a detection for",
-  or needs to generate correlation rule .yml files with embedded XQL detection logic.
-version: 1.0.0
+  "correlation JSON", "detection engineering", "build a detection for",
+  or needs to generate correlation rule JSON files with embedded XQL detection logic.
+version: 2.0.0
 ---
 
 # Correlation Rule Generation
 
 ## Scope
 
-Generate correlation rule `.yml` files for Cortex XSIAM. Each output file contains
-a complete YAML wrapper (metadata, severity, MITRE mapping, suppression) with embedded
-XQL detection logic as a literal block scalar.
+Generate correlation rule `.json` files for Cortex XSIAM. Each output file contains a
+JSON array with a single rule object wrapping XQL detection logic, alert metadata,
+severity, MITRE ATT&CK mapping, and suppression configuration.
 
 **This skill handles:**
 - Real-time single-event correlation rules
@@ -24,7 +24,7 @@ XQL detection logic as a literal block scalar.
 - Suppression configuration for alert deduplication
 
 **This skill does NOT handle:**
-- Standalone XQL queries without a YAML wrapper -- use `xsiam-xql`
+- Standalone XQL queries without a JSON wrapper -- use `xsiam-xql`
 - SPL-to-XQL translation -- use `xsiam-splunk-to-xql`
 - Automation scripts triggered by alerts -- use `xsiam-scripts`
 - Playbook workflows for alert response -- use `xsiam-playbooks`
@@ -39,7 +39,7 @@ Load these reference files before generating any correlation rule:
 
 1. `../xsiam-shared/references/xql-core-reference.md` -- XQL syntax, stage order, operators
 2. `../xsiam-shared/references/xql-datasets-core.md` -- Dataset names and field schemas
-3. `references/correlation-rule-spec.md` -- Correlation YAML field specification and templates
+3. `references/correlation-rule-spec.md` -- Correlation JSON field specification and templates
 
 ### Read On-Demand (when the detection query needs these)
 
@@ -67,15 +67,16 @@ ask clarifying questions before proceeding.
 
 Choose between:
 
-| Mode | When to Use | crontab Required? | search_window |
-|------|-------------|-------------------|---------------|
-| `REAL_TIME` | Single-event detections -- each matching event triggers an alert | No | Short or omitted (e.g., `1m`) |
-| `SCHEDULED` | Aggregation / threshold detections -- runs on a schedule | Yes (cron syntax) | Defines lookback period (e.g., `15m`, `1h`, `24h`) |
+| Mode | When to Use | Schedule Fields |
+|------|-------------|-----------------|
+| `REAL_TIME` | Single-event detections -- each matching event triggers an alert | `search_window`: null, `simple_schedule`: null, `timezone`: null, `crontab`: null |
+| `SCHEDULED` | Aggregation / threshold detections -- runs on a schedule | All four required: `search_window` (lookback), `simple_schedule` (human-readable), `timezone`, `crontab` (cron expression) |
 
 **Guidelines:**
 - Use `REAL_TIME` when every matching event is independently alertable
 - Use `SCHEDULED` when the detection requires counting, grouping, or comparing across events
 - `search_window` for `SCHEDULED` should cover at least 2x the cron interval to avoid gaps
+- REAL_TIME XQL is limited to: `dataset`, `datamodel`, `filter`, `alter`, `fields`, `config case_sensitive`
 
 ### Step 3: Write the XQL Detection Query
 
@@ -89,34 +90,47 @@ Build the XQL query following the standard stage order from `xql-core-reference.
 6. `filter` -- post-aggregation threshold
 7. `fields` -- select output columns
 
+**REAL_TIME restriction:** For REAL_TIME rules, only `dataset`/`datamodel`, `filter`,
+`alter`, `fields`, and `config` stages are supported. Do not use `comp`, `sort`, `dedup`,
+or `join` in REAL_TIME rules.
+
 **Critical rule:** The XQL query contains detection logic ONLY. Do not set alert metadata
-(name, severity, MITRE, suppression) inside the query. Those belong in the YAML wrapper.
+(name, severity, MITRE, suppression) inside the query. Those belong in the JSON fields.
 
 **Exception:** Dynamic severity via `if()` is allowed in XQL when the source data has a
 numeric score but no discrete severity field. In that case, compute `xdm.alert.severity`
-in the query and set a static fallback severity in YAML.
+in the query and set a static fallback severity in JSON.
 
-### Step 4: Build the YAML Wrapper
+### Step 4: Build the JSON Object
 
 Populate all correlation rule fields following the canonical field order from
-`correlation-rule-spec.md`. Required fields:
+`correlation-rule-spec.md`. Key instructions:
 
-- `global_rule_id` -- Generate a valid UUID v4
-- `rule_id`, `rule_name`, `name`, `alert_name` -- Rule identifiers (`alert_name` = `name`)
-- `description` -- Clear description of what the detection does
-- `dataset` -- Always `alerts`
-- `action` -- Always `ALERTS`
-- `execution_mode` -- `REAL_TIME` or `SCHEDULED`
-- `xql_query` -- The XQL from Step 3 as a YAML literal block scalar (`|`)
-- `severity` -- Static severity enum value
+- Prompt the user for `rule_id` (integer) if not provided
+- Set `is_enabled: true` by default
+- Include ALL fields in canonical order, including null fields for full export fidelity
+- Two severity patterns:
+  - **Static:** `"severity": "SEV_030_MEDIUM"`, `"user_defined_severity": null`
+  - **User Defined:** `"severity": "User Defined"`, `"user_defined_severity": "field.reference"`
+- `alert_fields` is an object mapping display names to XDM paths: `{"email": "xdm.source.user.upn"}`
+- `alert_name` and `alert_description` can use `$field` variable references
+- When `suppression_enabled` is false, set `suppression_duration` and `suppression_fields` to null
 
 ### Step 5: Map MITRE ATT&CK
 
-Assign relevant MITRE ATT&CK technique(s) and tactic(s):
+Assign relevant MITRE ATT&CK technique(s) and tactic(s) using labeled format:
 
-- Use the `mitre_defs` field with technique IDs mapping to tactic lists
-- Technique IDs follow the format `T####` or `T####.###` (sub-technique)
-- Tactic IDs follow the format `TA####`
+```json
+"mitre_defs": {
+  "TA0006 - Credential Access": [
+    "T1110 - Brute Force"
+  ]
+}
+```
+
+- Tactic keys: `"TA#### - Tactic Name"`
+- Technique values: `"T#### - Technique Name"` or `"T####.### - Sub-technique Name"`
+- Empty object `{}` when no MITRE mapping applies
 - Map to the most specific technique available; prefer sub-techniques when applicable
 
 ### Step 6: Configure Suppression
@@ -124,38 +138,53 @@ Assign relevant MITRE ATT&CK technique(s) and tactic(s):
 Set suppression to prevent alert fatigue:
 
 - `suppression_enabled` -- `true` for most detections
-- `suppression_duration` -- How long to suppress duplicate alerts (e.g., `1h`, `24h`)
-- `suppression_fields` -- Which fields define a "duplicate" (e.g., `source_ip`, `user_name`)
+- `suppression_duration` -- Human-readable format: `"1 hours"`, `"30 minutes"`, `"15 minutes"`
+- `suppression_fields` -- Which fields define a "duplicate" (e.g., `["source_ip"]`, `["user_name"]`)
+- When suppression is disabled, set `suppression_duration` and `suppression_fields` to `null`
 
 Refer to the suppression patterns table in `correlation-rule-spec.md` for recommended
 values by detection type.
 
-### Step 7: Format Output
+### Step 7: Deliver Output
 
-Deliver the complete `.yml` file:
+Deliver:
 
-1. All fields in canonical order (matching XSIAM export format)
-2. XQL query as a YAML literal block scalar (`|`) -- preserving indentation
-3. Inline `# ANNOTATION:` comments explaining key design choices
-4. No trailing whitespace or extra blank lines inside the YAML
+1. A `.json` file containing a JSON array with one rule object: `[{...}]`
+2. All fields in canonical order from `correlation-rule-spec.md`, including null fields
+3. XQL query serialized as a JSON string with `\n` for newlines
+4. A companion markdown summary block explaining key design decisions (execution mode
+   choice, severity pattern, suppression rationale, MITRE mapping rationale)
 
 ---
 
 ## Output Format
 
-The final output is a single `.yml` file:
+The final output is a `.json` file containing a single-element JSON array:
 
-```yaml
-global_rule_id: "<uuid-v4>"
-rule_id: "<snake_case_rule_id>"
-rule_name: "<Human Readable Rule Name>"
-# ... all fields in canonical order ...
-xql_query: |
-  dataset = <dataset_name>
-  | filter <conditions>
-  | <detection logic>
-severity: SEV_030_MEDIUM
-# ... remaining fields ...
+```json
+[
+  {
+    "rule_id": 100,
+    "name": "Rule Name",
+    "severity": "SEV_030_MEDIUM",
+    "xql_query": "dataset = xdr_data\n| filter event_type = ENUM.EVENT_LOG\n| filter action_evtlog_event_id = 4625\n| fields agent_hostname, action_evtlog_event_id",
+    "is_enabled": true,
+    "description": "Detects ...",
+    "alert_name": "Rule Name",
+    ...
+  }
+]
+```
+
+After the JSON file, include a companion markdown summary:
+
+```markdown
+### Design Decisions
+
+- **Execution mode:** [rationale]
+- **Severity:** [rationale]
+- **Suppression:** [rationale]
+- **MITRE mapping:** [rationale]
 ```
 
 ---
@@ -164,18 +193,26 @@ severity: SEV_030_MEDIUM
 
 Before delivering the correlation rule, verify ALL of the following:
 
-1. **XQL contains detection logic only** -- no alert metadata in the query
-   (exception: dynamic severity via `if()` when source lacks discrete severity field)
-2. **Severity uses correct enum** -- one of: `SEV_010_CRITICAL`, `SEV_020_HIGH`,
-   `SEV_030_MEDIUM`, `SEV_040_LOW`, `SEV_060_INFORMATIONAL` (there is NO `SEV_050`)
-3. **`alert_name` and `name` match** -- these two fields must have identical values
-4. **`global_rule_id` is a valid UUID v4** -- lowercase hex with hyphens
-5. **`dataset: alerts` always set** -- correlation rules always target the alerts dataset
-6. **`action: ALERTS` always set** -- correlation rules always produce alerts
-7. **MITRE technique IDs are valid** -- format `T####` or `T####.###`
-8. **`search_window` appropriate for execution mode** -- short/omitted for REAL_TIME,
-   adequate lookback for SCHEDULED (at least 2x cron interval)
-9. **Suppression fields make sense** -- fields that define a "duplicate" for this
-   specific detection type (e.g., `source_ip` for brute force, not `user_name`)
-10. **Dynamic severity only when appropriate** -- only use `if()` in XQL for severity
-    when the source has a numeric score but no discrete severity field
+1. **Output is valid JSON** -- no trailing commas, proper quoting, correct nesting
+2. **Output wrapped in array** -- `[{...}]` even for single rules
+3. **All fields present** -- all 29 fields in canonical order, including null fields
+4. **`rule_id` is an integer** -- prompted from user if not provided
+5. **Severity enum valid** -- one of: `SEV_010_CRITICAL`, `SEV_020_HIGH`,
+   `SEV_030_MEDIUM`, `SEV_040_LOW`, `SEV_060_INFORMATIONAL` (no `SEV_050`),
+   or `"User Defined"`
+6. **`dataset` always `"alerts"`**
+7. **`action` always `"ALERTS"`**
+8. **`mitre_defs` uses labeled format** -- tactic-to-technique with
+   `"TA#### - Name": ["T#### - Name"]`
+9. **Duration strings use human-readable format** -- `"1 hours"`, `"15 minutes"`,
+   `"30 minutes"` (not shorthand)
+10. **REAL_TIME schedule fields are null** -- `search_window`, `simple_schedule`,
+    `timezone`, `crontab` all `null`
+11. **REAL_TIME XQL uses only supported stages** -- `dataset`/`datamodel`, `filter`,
+    `alter`, `fields`, `config` (no `comp`, `sort`, `dedup`, `join`)
+12. **XQL contains detection logic only** -- alert metadata in JSON fields
+    (exception: dynamic severity via `alter`/`if()`)
+13. **Suppression fields match detection type** -- fields that define "duplicate"
+    for this specific detection
+14. **Companion markdown summary included** -- explains execution mode, severity,
+    suppression, and MITRE choices
