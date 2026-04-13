@@ -26,9 +26,23 @@ Generate multi-command Python integrations with `BaseClient` and a corresponding
 ---
 
 ### `xsiam-xql`
-Generate XQL queries from natural language descriptions. Covers threat hunting, investigation, analytics, and correlation rules across all common XSIAM datasets. Handles pipe-separated stage syntax, time ranges, joins, and field references.
+Generate XQL queries from natural language descriptions. Covers threat hunting, investigation, and analytics across all common XSIAM datasets. Uses tiered reference loading — core XQL references always load while advanced functions, extended datasets, and federated search references load on-demand based on query requirements.
 
-**Example triggers:** "write an XQL query", "hunt for threats", "search XSIAM data", "build a correlation rule"
+**Example triggers:** "write an XQL query", "hunt for threats", "search XSIAM data", "query dataset"
+
+---
+
+### `xsiam-correlations`
+Generate correlation rule JSON files matching the XSIAM export/import format. Produces complete `.json` files with embedded XQL, scheduling configuration, severity mapping, and MITRE ATT&CK tagging. Shares the tiered XQL reference layer with `xsiam-xql`.
+
+**Example triggers:** "create a correlation rule", "build a detection rule", "detection engineering", "XSIAM alert rule"
+
+---
+
+### `xsiam-splunk-to-xql`
+Translate existing Splunk SPL queries into equivalent XQL. Maps SPL commands, functions, and syntax to their XQL counterparts using a dedicated translation reference. Shares the tiered XQL reference layer with `xsiam-xql`.
+
+**Example triggers:** "translate SPL", "convert Splunk to XQL", "migrate Splunk query", "SPL to XQL"
 
 ---
 
@@ -50,9 +64,16 @@ Each skill draws from reference files included in the plugin:
 
 | Reference | Used By | Contents |
 |---|---|---|
-| XQL syntax reference | xsiam-xql | Stages, operators, functions, and time syntax |
-| XQL datasets | xsiam-xql | Common dataset names and field schemas |
+| XQL core reference | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Stages, operators, functions, and time syntax (always loaded) |
+| XQL datasets core | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Common dataset names, presets, and joins (always loaded) |
+| XQL advanced functions | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Array, JSON, and window functions (on-demand) |
+| XQL datasets extended | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Third-party, email, and CIE datasets (on-demand) |
+| XQL federated search | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | External S3/GCS/Azure querying (on-demand) |
+| Correlation rule spec | xsiam-correlations | JSON export format, scheduling, severity, MITRE mapping |
+| Correlation examples | xsiam-correlations | Complete example correlation rule JSON files |
+| SPL-to-XQL mapping | xsiam-splunk-to-xql | SPL command and function translation reference |
 | Script YAML spec | xsiam-scripts | Required field ordering and complete examples |
+| Script types & patterns | xsiam-scripts | Specialized script types: enrichment, remediation, polling, etc. |
 | Integration YAML spec | xsiam-integrations | Integration structure, configuration, and command schema |
 | Integration patterns | xsiam-integrations | BaseClient, pagination, error handling patterns |
 | Common patterns | xsiam-scripts, xsiam-integrations | Shared Python patterns: CommandResults, indicators, logging |
@@ -73,6 +94,12 @@ Write a standalone script that enriches an IP address using VirusTotal
 Write an XQL query to find all failed logins from outside the US in the last 24 hours
 ```
 ```
+Create a correlation rule to detect brute force attacks — more than 10 failed logins in 5 minutes
+```
+```
+Translate this Splunk query to XQL: index=main sourcetype=syslog | stats count by src_ip
+```
+```
 Build a phishing response playbook that enriches URLs, checks reputation, and blocks malicious indicators
 ```
 ```
@@ -90,9 +117,11 @@ xsiam-buddy/
 │   ├── xsiam-scripts/          # Standalone script generation
 │   ├── xsiam-integrations/     # Multi-command integration generation
 │   ├── xsiam-xql/              # XQL query generation
+│   ├── xsiam-correlations/     # Correlation rule JSON generation
+│   ├── xsiam-splunk-to-xql/    # SPL to XQL translation
 │   ├── xsiam-playbooks/        # Playbook generation
 │   ├── xsiam-docs/             # Documentation generation
-│   └── xsiam-shared/           # Shared reference files (common patterns)
+│   └── xsiam-shared/           # Shared XQL references and Python patterns
 └── docs/
     └── plans/                  # Design documents
 ```
@@ -102,6 +131,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.1.5 |
+| Version | 0.4.0 |
 | Author | joseph3325 |
-| Keywords | xsiam, xsoar, cortex, xql, playbook, automation, security |
+| Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |
