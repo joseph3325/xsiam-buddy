@@ -5,21 +5,22 @@
   },
   "metadata": {
     "description": "Cortex XSIAM content development tools for Claude Code",
-    "version": "0.1.6"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "xsiam-buddy",
-      "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, playbooks, and documentation",
+      "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, correlation rules, playbooks, and documentation",
       "source": "./",
       "strict": true,
       "skills": [
         "./skills/xsiam-scripts",
         "./skills/xsiam-xql",
+        "./skills/xsiam-correlations",
+        "./skills/xsiam-splunk-to-xql",
         "./skills/xsiam-playbooks",
         "./skills/xsiam-docs",
-        "./skills/xsiam-shared",
-        "./skills/xsiam-splunk-to-xql"
+        "./skills/xsiam-shared"
       ]
     }
   ]
