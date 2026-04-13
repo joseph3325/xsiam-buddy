@@ -19,6 +19,7 @@ Generate importable unified YAML files for Cortex XSIAM/XSOAR scripts. The Pytho
 Read the reference files:
 - `references/script-yaml-spec.md` — Script YAML structure, field ordering, and complete example
 - `../xsiam-shared/references/common-patterns.md` — Python patterns: outputs, error handling, demisto API, arg parsing, indicators
+- `references/script-types-patterns.md` — Specialized script types: transformers, filters, dynamic sections, field-change triggers
 
 ## What is a Script?
 
@@ -31,6 +32,19 @@ Use a script when:
 - Running calculations or lookups on existing context data
 
 Use the **xsiam-integrations** skill instead when you need to connect to an external API with authentication and multiple commands.
+
+## Script Types
+
+Scripts fall into several categories based on their tags and execution context. Standard scripts (no functional tag) follow the workflow below directly. For specialized types, also read `references/script-types-patterns.md` for the specific pattern and a complete example.
+
+| Type | Tag | When to use |
+|------|-----|-------------|
+| Standard | (none) | General-purpose: data processing, executeCommand chaining, utilities |
+| Transformer | `transformer` | Transform a value inline in playbook task input mappings |
+| Filter | `filter` | Evaluate a condition in playbook task conditions |
+| Dynamic Section | `dynamic-section` | Render read-only display content in case/issue layouts |
+| Field-Change Triggered | `field-change-triggered` | React to a field value change on a layout |
+| Widget | `widget` | Power a dashboard or report widget |
 
 ## Workflow
 
