@@ -18,7 +18,8 @@
         "./skills/xsiam-xql",
         "./skills/xsiam-playbooks",
         "./skills/xsiam-docs",
-        "./skills/xsiam-shared"
+        "./skills/xsiam-shared",
+        "./skills/xsiam-splunk-to-xql"
       ]
     }
   ]
