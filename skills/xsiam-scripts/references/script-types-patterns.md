@@ -29,7 +29,6 @@ name: NormalizeTimestamp
 script: |-
   register_module_line('NormalizeTimestamp', 'start', __line__())
 
-  import demistomock as demisto
   from CommonServerPython import *
   from CommonServerUserPython import *
   from datetime import datetime, timezone
@@ -121,7 +120,6 @@ name: IsIPInCIDR
 script: |-
   register_module_line('IsIPInCIDR', 'start', __line__())
 
-  import demistomock as demisto
   from CommonServerPython import *
   from CommonServerUserPython import *
   from ipaddress import ip_address, ip_network
@@ -213,7 +211,6 @@ name: DisplayDBotScores
 script: |-
   register_module_line('DisplayDBotScores', 'start', __line__())
 
-  import demistomock as demisto
   from CommonServerPython import *
   from CommonServerUserPython import *
 
@@ -331,7 +328,6 @@ name: ValidateResolutionReason
 script: |-
   register_module_line('ValidateResolutionReason', 'start', __line__())
 
-  import demistomock as demisto
   from CommonServerPython import *
   from CommonServerUserPython import *
 

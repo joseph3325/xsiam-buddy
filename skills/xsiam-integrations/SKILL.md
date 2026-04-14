@@ -71,7 +71,7 @@ Build a single `.yml` file with this top-level structure:
 ### 3. Python Code Conventions
 
 The embedded Python follows XSOAR/XSIAM conventions:
-- Standard imports: `demistomock`, `CommonServerPython`, `CommonServerUserPython`
+- Standard imports: `CommonServerPython`, `CommonServerUserPython` (do **not** include `demistomock` unless user requests it)
 - `BaseClient` subclass with `_http_request()` for all API calls
 - Command routing in `main()`: `if command == 'test-module': ... elif command == 'vendor-action': ...`
 - Parse args with `argToList()`, `argToBoolean()`, `arg_to_number()`, `arg_to_datetime()` — never raw casting
@@ -95,7 +95,7 @@ Optionally also generate:
 Before delivering, verify:
 - [ ] Python code is embedded in `script.script: |-` (nested, not top-level)
 - [ ] Python indentation is consistent within the YAML block
-- [ ] Standard imports present (`demistomock`, `CommonServerPython`, `CommonServerUserPython`)
+- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` omitted unless user requested it
 - [ ] `main()` has `try/except` with `return_error()`
 - [ ] `BaseClient` subclass used for all HTTP calls via `_http_request()`
 - [ ] `test-module` command is implemented and routes correctly in `main()`

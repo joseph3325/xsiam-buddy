@@ -9,14 +9,14 @@ Shared patterns used in both scripts and integrations.
 Every XSIAM/XSOAR automation starts with:
 
 ```python
-import demistomock as demisto
 from CommonServerPython import *
 from CommonServerUserPython import *
 ```
 
-- **`demistomock`**: Provides the `demisto` object — the interface to the platform
-- **`CommonServerPython`**: Core utilities: `BaseClient`, `CommandResults`, `DemistoException`, `tableToMarkdown`, `return_results`, `return_error`, argument helpers, indicator types, etc.
+- **`CommonServerPython`**: Core utilities: `BaseClient`, `CommandResults`, `DemistoException`, `tableToMarkdown`, `return_results`, `return_error`, argument helpers, indicator types, etc. Also provides the `demisto` object at runtime.
 - **`CommonServerUserPython`**: Integration-specific additions (usually empty or auto-generated)
+
+> **Note:** Do not include `import demistomock as demisto` by default. The platform provides the `demisto` object at runtime. Only add the `demistomock` import if the user explicitly requests it (e.g., for local testing with `demisto-sdk` and `pytest`).
 
 ---
 
@@ -156,7 +156,7 @@ def check_scan_command(args):
 
 ## Demisto API Reference
 
-The `demisto` object is the interface between your code and the platform. Import via `import demistomock as demisto`.
+The `demisto` object is the interface between your code and the platform. It is available at runtime without any import.
 
 ### Inputs
 
@@ -398,9 +398,11 @@ return CommandResults(
 
 ---
 
-## Unit Testing
+## Unit Testing (On Request Only)
 
-Scripts are tested outside Docker using `pytest` and the `demistomock` layer. Mock platform calls, invoke `main()`, and assert on the results.
+Unit test files are only generated when the user explicitly requests them. Tests use `pytest` and the `demistomock` layer to run scripts outside Docker.
+
+When requested, the test file **does** include `import demistomock as demisto` — this is the one place that import is needed, since tests run outside the platform where `demisto` is not provided automatically.
 
 ```python
 # FormatData_test.py
@@ -448,7 +450,7 @@ def test_missing_input(mocker):
 ```
 
 **Key patterns:**
-- Import `demistomock as demisto` in the test file — same mock layer the script uses
+- Import `demistomock as demisto` in the test file — needed for local testing outside the platform
 - `mocker.patch.object(demisto, 'args', ...)` to control input
 - `mocker.patch('ScriptName.return_results')` to capture output without platform side effects
 - `mocker.patch('ScriptName.return_error')` to verify error handling

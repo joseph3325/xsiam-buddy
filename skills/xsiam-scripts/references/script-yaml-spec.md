@@ -17,7 +17,6 @@ vcShouldKeepItemLegacyProdMachine: false   # Required — always false
 
 name: script-name          # Script name (matches commonfields.id for new scripts)
 script: |-
-  import demistomock as demisto
   from CommonServerPython import *
   from CommonServerUserPython import *
 
@@ -102,7 +101,6 @@ Every script must include `register_module_line()` calls as the **first and last
 ```python
 register_module_line('ScriptName', 'start', __line__())
 
-import demistomock as demisto
 from CommonServerPython import *
 from CommonServerUserPython import *
 
@@ -140,7 +138,6 @@ Scripts do not use a `BaseClient`. The `main()` function reads args directly:
 ```python
 register_module_line('ScriptName', 'start', __line__())
 
-import demistomock as demisto
 from CommonServerPython import *
 from CommonServerUserPython import *
 
@@ -224,7 +221,6 @@ name: FormatData
 script: |-
   register_module_line('FormatData', 'start', __line__())
 
-  import demistomock as demisto
   from CommonServerPython import *
   from CommonServerUserPython import *
   import json

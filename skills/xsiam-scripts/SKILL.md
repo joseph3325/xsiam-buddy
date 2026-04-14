@@ -85,7 +85,8 @@ Build a single `.yml` file. Field order must match real XSIAM export structure:
 The embedded Python follows XSOAR/XSIAM conventions:
 - First line: `register_module_line('ScriptName', 'start', __line__())` — use the exact script name
 - Last line: `register_module_line('ScriptName', 'end', __line__())` — use the exact script name
-- Standard imports come immediately after the opening `register_module_line`: `demistomock`, `CommonServerPython`, `CommonServerUserPython`
+- Standard imports come immediately after the opening `register_module_line`: `CommonServerPython`, `CommonServerUserPython`
+- Do **not** include `import demistomock as demisto` by default — the platform provides the `demisto` object at runtime. Only add it if the user explicitly requests it (e.g., for local testing with `demisto-sdk`)
 - Simple `main()` with `try/except` and `return_error()`
 - Parse args with `argToList()`, `argToBoolean()`, `arg_to_number()`, `arg_to_datetime()` — never raw casting
 - Return results with `CommandResults` and `return_results()`
@@ -110,7 +111,7 @@ Optionally also generate:
 Before delivering, verify:
 - [ ] Python code is embedded using `script: |-` (top-level string, not nested mapping)
 - [ ] Python indentation is consistent within the YAML block (2 spaces from key level)
-- [ ] Standard imports present (`demistomock`, `CommonServerPython`, `CommonServerUserPython`)
+- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` omitted unless user requested it
 - [ ] `main()` has `try/except` with `return_error()`
 - [ ] Field ordering matches spec: `commonfields → vcShouldKeepItemLegacyProdMachine → name → script → type → tags → comment → enabled → args → outputs → scripttarget → subtype → pswd → runonce → dockerimage → runas → engineinfo → mainengineinfo`
 - [ ] `vcShouldKeepItemLegacyProdMachine: false` is present at top level

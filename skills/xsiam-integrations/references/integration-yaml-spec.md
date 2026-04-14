@@ -63,7 +63,6 @@ The `script` key is a **mapping** with nested fields:
 ```yaml
 script:
   script: |-
-    import demistomock as demisto
     from CommonServerPython import *
     from CommonServerUserPython import *
 
@@ -268,7 +267,6 @@ configuration:
 
 script:
   script: |-
-    import demistomock as demisto
     from CommonServerPython import *
     from CommonServerUserPython import *
 
