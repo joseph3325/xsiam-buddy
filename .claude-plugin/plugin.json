@@ -1,6 +1,6 @@
 {
   "name": "xsiam-buddy",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, correlation rules, playbooks, and documentation",
   "author": {
     "name": "Joe"
