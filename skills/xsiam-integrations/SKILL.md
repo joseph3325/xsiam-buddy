@@ -8,7 +8,7 @@ description: >
   authentication, multiple commands, and a corresponding YAML metadata file
   for Cortex XSIAM or XSOAR. For standalone data-processing scripts, use the
   xsiam-scripts skill instead.
-version: 1.0.0
+version: 2.0.0
 ---
 
 # XSIAM Integration Development
@@ -41,30 +41,35 @@ Use the **xsiam-scripts** skill instead for standalone data processing without e
 
 Determine:
 - Target product/vendor and API documentation URL
-- Authentication method (API key, OAuth, basic auth, certificate)
 - Commands needed — what operations to support
 - For each command: required/optional arguments and expected outputs
-- Whether it fetches incidents/events into XSIAM (`isfetch: true`)
-- Whether any commands are long-running and need polling (`ScheduledCommand`)
+
+**Authentication method** — match the API's auth scheme to the correct pattern:
+
+| Auth scheme | Integration pattern |
+|---|---|
+| API key in header | Bearer token via `_get_headers()` |
+| Username + password | `HTTPBasicAuth` via `_http_request(auth=)` |
+| OAuth2 client credentials | Token caching with `getIntegrationContext()` + expiry |
+| OAuth2 authorization code | Device/auth code flow (rare for server-to-server) |
+| Certificate-based | Mutual TLS via `_http_request()` cert params |
+
+**Conditional requirements** — ask only when applicable:
+- **Fetch incidents?** → Gather: alert endpoint, time field name, severity mapping, dedup strategy (ID-based vs. time-based), lookback window needs
+- **Polling commands?** → Which commands are long-running async? Use `@polling_function` by default
+- **Indicator enrichment?** → Which entity types (IP, Domain, URL, File, CVE)? What vendor score → DBotScore mapping?
+- **Credential vault?** → Does target system use rotating credentials? → `isFetchCredentials` pattern with type 9 params
 
 ### 2. Generate the Unified YAML
 
-Build a single `.yml` file with this top-level structure:
+Build a single `.yml` file following these ordered sub-steps:
 
-1. `commonfields` — `id` and `version: -1`
-2. `name` and `display` — integration name
-3. `category` — product category
-4. `description` — one-line integration description
-5. `configuration` — auth and connection parameters
-6. `script` — nested mapping containing:
-   - `script: |-` — embedded Python code
-   - `type: python`
-   - `subtype: python3`
-   - `dockerimage` — pinned `3.12.x` version
-   - `isfetch: false` (or `true` if fetching incidents)
-   - `isfetchevents: false`
-   - `runonce: false`
-   - `commands` — array of command definitions
+1. **Top-level metadata** — `commonfields` (`id`, `version: -1`), `name`, `display`, `category`, `description`
+2. **`sectionOrder`** — define UI tabs: `Connect`, `Collect` (if fetching), `Optimize` (optional)
+3. **`configuration`** — auth and connection parameters; assign each param a `section` and optionally `advanced: true`
+4. **`script` mapping** — set flags: `type: python`, `subtype: python3`, `dockerimage` (pinned `3.12.x`), `isfetch` (true if fetching incidents), `isfetchevents: false`, `isFetchSamples` (true if fetching), `runonce: false`
+5. **Command definitions** — full argument specs (`supportedModules`, `defaultValue`, `isArray`, `predefined`) and output specs (`contextPath`, `type`)
+6. **Embed Python code** — insert into `script.script: |-` last
 
 **Key structural difference from scripts:** For integrations, `script` is a **mapping** with nested fields. The Python code lives in `script.script`, not at the top level.
 
@@ -112,7 +117,12 @@ Before delivering, verify:
 - [ ] Polling commands: `ScheduledCommand` used in Python and `polling: true` set in YAML command definition
 - [ ] Indicator commands: `DBotScore` + `Common.*` indicator object passed to `CommandResults`
 - [ ] Token-caching integrations: integration context used, not global variables
-- [ ] Sensitive config params use `type: 4` (encrypted)
+- [ ] Sensitive config params use `type: 4` (encrypted) or `type: 9` (credential vault pair)
+- [ ] `sectionOrder` present when integration has 4+ configuration parameters
+- [ ] Configuration params have `section: Connect`/`Collect` and `advanced: true` where appropriate
+- [ ] Fetch incidents: dedup IDs tracked in `lastRun`, `isFetchSamples: true` set in script section
+- [ ] Polling: `@polling_function` decorator or `ScheduledCommand` used — never `time.sleep()` in regular commands
+- [ ] Proxy + insecure params have `section: Connect` and `advanced: true`
 
 ## Key Conventions
 

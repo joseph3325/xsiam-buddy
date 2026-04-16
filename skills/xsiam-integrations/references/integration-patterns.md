@@ -241,42 +241,50 @@ def main():
 
 ## Fetch Incidents Pattern
 
-For integrations that ingest alerts or events into XSIAM:
+For integrations that ingest alerts into XSIAM. Uses CommonServerPython helpers for deduplication and lookback windows to handle late-arriving incidents.
 
-**YAML:** Set `isfetch: true` in the `script` section.
+**YAML:** Set `isfetch: true` and `isFetchSamples: true` in the `script` section.
+
+### Production-Grade Fetch with Dedup & Lookback
 
 ```python
-def fetch_incidents(client: VendorClient) -> None:
-    """Fetch new incidents and store them via demisto.incidents()."""
-    last_run = demisto.getLastRun()
-    last_fetch_time = last_run.get('last_fetch', 0)
+def fetch_incidents(client, params, last_run):
+    """Fetch new incidents with deduplication and lookback window."""
+    start_time, end_time = get_fetch_run_time_range(
+        last_run=last_run,
+        first_fetch=params.get('first_fetch', '3 days'),
+        look_back=int(params.get('look_back', 1)),
+        date_format='%Y-%m-%dT%H:%M:%SZ',
+    )
 
-    incidents = []
-    newest_time = last_fetch_time
+    max_fetch = int(params.get('max_fetch', 50))
+    raw_alerts = client.list_alerts(start_time=start_time, end_time=end_time)
 
-    try:
-        response = client.get_events(since=last_fetch_time, limit=100)
+    incidents, new_last_run = filter_incidents_by_duplicates_and_limit(
+        incidents_res=raw_alerts,
+        last_run=last_run,
+        fetch_limit=max_fetch,
+        id_field='id',
+    )
 
-        for item in response.get('events', []):
-            occurred = item.get('created_at', '')
-            incident = {
-                'name': item.get('title', 'Unnamed Event'),
-                'occurred': occurred,
-                'rawJSON': json.dumps(item),
-                'type': 'Vendor Event',
-                'severity': map_severity(item.get('severity'))
-            }
-            incidents.append(incident)
+    formatted = []
+    for alert in incidents:
+        formatted.append({
+            'name': alert.get('title', 'Unnamed Alert'),
+            'occurred': alert.get('created_at', ''),
+            'rawJSON': json.dumps(alert),
+            'type': params.get('incident_type', 'Vendor Alert'),
+            'severity': map_severity(alert.get('severity')),
+        })
 
-            created_ts = int(parse_date_string(occurred).timestamp()) if occurred else 0
-            if created_ts > newest_time:
-                newest_time = created_ts
-
-    except Exception as e:
-        demisto.error(f'Error fetching incidents: {str(e)}')
-
-    demisto.setLastRun({'last_fetch': newest_time})
-    demisto.incidents(incidents)
+    demisto.incidents(formatted)
+    demisto.setLastRun(update_last_run_object(
+        last_run=new_last_run,
+        incidents=incidents,
+        fetch_limit=max_fetch,
+        id_field='id',
+        date_field='created_at',
+    ))
 
 
 def map_severity(api_severity: str) -> int:
@@ -292,8 +300,28 @@ def map_severity(api_severity: str) -> int:
 
 # In main():
 if command == 'fetch-incidents':
-    fetch_incidents(client)
+    fetch_incidents(client, params, demisto.getLastRun())
 ```
+
+### Helper Functions
+
+| Function | Purpose |
+|---|---|
+| `get_fetch_run_time_range(last_run, first_fetch, look_back, date_format)` | Calculates `(start_time, end_time)` accounting for lookback window |
+| `filter_incidents_by_duplicates_and_limit(incidents_res, last_run, fetch_limit, id_field)` | Removes already-seen IDs, enforces fetch limit |
+| `update_last_run_object(last_run, incidents, fetch_limit, id_field, date_field)` | Updates LastRun with new timestamps and found IDs |
+
+### LastRun Object Structure
+
+```python
+{
+    'time': '2024-01-15T10:00:00Z',       # Timestamp of last fetched incident
+    'limit': 50,                            # Current fetch limit
+    'found_incident_ids': ['id1', 'id2']   # IDs seen in last window (for dedup)
+}
+```
+
+**Lookback window:** The `look_back` parameter (minutes) slides the fetch window backwards to catch incidents that arrived late. `filter_incidents_by_duplicates_and_limit` prevents re-ingesting incidents already seen in the overlap.
 
 ---
 
@@ -405,4 +433,192 @@ commands:
       - name: job_id
         required: true
         description: Job ID returned by the submit command
+```
+
+---
+
+## @polling_function Decorator Pattern
+
+A simpler alternative to raw `ScheduledCommand` for most polling use cases:
+
+```python
+@polling_function(
+    name='vendor-scan-file',
+    interval=30,
+    timeout=600,
+)
+def scan_file_command(args: dict, **kwargs) -> PollResult:
+    scan_id = args.get('scan_id') or client.submit_scan(args['file_id'])
+    result = client.get_scan_status(scan_id)
+
+    if result['status'] == 'pending':
+        return PollResult(
+            response=None,
+            continue_to_poll=True,
+            args_for_next_run={'scan_id': scan_id, **args},
+        )
+
+    return PollResult(
+        response=CommandResults(
+            outputs_prefix='Vendor.Scan',
+            outputs_key_field='id',
+            outputs=result,
+        ),
+        continue_to_poll=False,
+    )
+```
+
+**`PollResult` parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `response` | `CommandResults` or `None` | Final result when done; `None` while polling |
+| `continue_to_poll` | `bool` | `True` to keep polling, `False` when complete |
+| `args_for_next_run` | `dict` | Arguments passed to the next poll iteration |
+| `partial_result` | `CommandResults` or `None` | Intermediate result shown while polling |
+
+**When to use which:**
+- **`@polling_function`** — most cases. Simpler, handles scheduling automatically.
+- **Raw `ScheduledCommand`** — when you need variable intervals, conditional rescheduling, or custom timeout logic.
+
+---
+
+## Rate Limiting & Retry
+
+Configure automatic retries with exponential backoff in the BaseClient constructor:
+
+```python
+class VendorClient(BaseClient):
+    def __init__(self, base_url, api_key, verify=True, proxy=False):
+        super().__init__(
+            base_url=base_url,
+            verify=verify,
+            proxy=proxy,
+            headers={'Authorization': f'Bearer {api_key}'},
+            retries=3,
+            backoff_factor=1.0,  # waits 1s, 2s, 4s between retries
+        )
+```
+
+**Retry behavior:** When `retries` is set, `_http_request()` automatically retries on status codes 429, 500, 502, 503, 504. The `backoff_factor` controls wait time between attempts (factor × 2^retry).
+
+To customize which status codes trigger retries:
+
+```python
+super().__init__(
+    base_url=base_url,
+    verify=verify,
+    proxy=proxy,
+    retries=3,
+    backoff_factor=2.0,
+    status_list_to_retry=[429, 500, 502, 503],
+)
+```
+
+---
+
+## Credential Vault Pattern
+
+Most integrations are **consumers** — they accept vault-managed credentials via type 9 parameters. Only credential-management integrations are **providers** (implement `fetch-credentials`).
+
+### Consumer Pattern (Common)
+
+```python
+# In main() — type 9 params arrive as {'identifier': 'user', 'password': 'pass'}
+credentials = params.get('credentials', {})
+username = credentials.get('identifier', '')
+password = credentials.get('password', '')
+
+client = VendorClient(
+    base_url=params.get('server_url'),
+    username=username,
+    password=password,
+    verify=not params.get('insecure', False),
+    proxy=params.get('proxy', False)
+)
+```
+
+### Provider Pattern (Rare — Vault Integrations Only)
+
+```python
+def fetch_credentials_command(client):
+    """Return credentials for other integrations to consume."""
+    creds = client.get_credentials()
+    demisto.credentials([
+        {'user': c['username'], 'password': c['password'], 'name': c['name']}
+        for c in creds
+    ])
+```
+
+---
+
+## Proxy & SSL Handling
+
+Standard proxy and SSL setup in `main()`:
+
+```python
+def main():
+    params = demisto.params()
+    verify = not params.get('insecure', False)
+    proxy = params.get('proxy', False)
+
+    client = VendorClient(
+        base_url=params.get('server_url', '').rstrip('/'),
+        api_key=params.get('api_key'),
+        verify=verify,
+        proxy=proxy,
+    )
+```
+
+When you need the explicit proxy URL (rare — usually for non-BaseClient HTTP calls):
+
+```python
+from CommonServerPython import handle_proxy
+
+proxies = handle_proxy(proxy_param_name='proxy', checkbox_default_value=False)
+# Returns {'http': 'http://proxy:8080', 'https': 'http://proxy:8080'} or {}
+```
+
+`handle_proxy()` also unsets `REQUESTS_CA_BUNDLE` and `CURL_CA_BUNDLE` when SSL verification is disabled.
+
+---
+
+## Error Handling — Detailed Patterns
+
+### test_module with Status Code Differentiation
+
+```python
+def test_module(client):
+    try:
+        client.list_items(limit=1)
+        return 'ok'
+    except DemistoException as e:
+        if e.res is not None:
+            if e.res.status_code == 401:
+                return 'Authorization failed — check API key'
+            if e.res.status_code == 403:
+                return 'Forbidden — check API key permissions'
+            if e.res.status_code == 429:
+                return 'Rate limited — reduce fetch frequency or try again later'
+        if 'Connection' in str(e):
+            return f'Connection failed — verify server URL: {e}'
+        raise
+```
+
+### Command Error Handling
+
+```python
+def main():
+    try:
+        # ... client setup and command routing ...
+        pass
+    except DemistoException as e:
+        if e.res is not None and e.res.status_code == 404:
+            return_error(f'Resource not found: {str(e)}')
+        else:
+            return_error(f'API error in {demisto.command()}: {str(e)}')
+    except ValueError as e:
+        return_error(f'Invalid input: {str(e)}')
+    except Exception as e:
+        return_error(f'Failed to execute {demisto.command()}: {str(e)}')
 ```
