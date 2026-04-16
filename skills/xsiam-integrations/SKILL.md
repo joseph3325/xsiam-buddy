@@ -8,7 +8,7 @@ description: >
   authentication, multiple commands, and a corresponding YAML metadata file
   for Cortex XSIAM or XSOAR. For standalone data-processing scripts, use the
   xsiam-scripts skill instead.
-version: 1.0.0
+version: 2.0.0
 ---
 
 # XSIAM Integration Development
