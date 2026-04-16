@@ -191,15 +191,20 @@ commands:
 
 | Type | Name | Description | Example use |
 |------|------|-------------|-------------|
-| 0 | Short Text | Single-line text input | `server_url`, `username` |
-| 4 | Encrypted | Password field (encrypted at rest) | `api_key`, `password` |
-| 8 | Boolean | Checkbox (true/false) | `insecure`, `proxy` |
-| 9 | Authentication | Username + password pair | Auth credential pair |
-| 12 | Single Select | Dropdown with one choice | `log_level`, `region` |
-| 13 | Text Area | Multi-line text input | `ca_certificate`, `private_key` |
-| 15 | Multi Select | Multiple selections allowed | `incident_types`, `severities` |
+| 0 | Short Text | Single-line text input | `server_url`, `username`, `max_fetch` |
+| 1 | Long Text | Multi-line text (no encryption) | `certificate_pem`, `query_filter` |
+| 4 | Encrypted | Password field (encrypted at rest) | `api_key`, `password`, `client_secret` |
+| 8 | Boolean | Checkbox (true/false) | `insecure`, `proxy`, `isFetch` |
+| 9 | Credentials | Username + password pair (vault-compatible) | Auth credential pair; platform resolves vault references at runtime |
+| 12 | Single Select | Dropdown — one choice from `options` list | `log_level`, `region` |
+| 13 | Text Area (alt) | Multi-line text input (alternate rendering) | `private_key`, `ca_bundle` |
+| 14 | Multi Select | Multiple selections from `options` list | `event_types`, `severities` |
+| 15 | Single Select (alt) | Predefined dropdown (alternate) | `incident_type_filter` |
+| 16 | Incident Type | Incident type selector dropdown (platform UI) | `incident_type` for fetch integrations |
 
-### Select Parameter Example (Type 12)
+### Select Parameter Examples
+
+**Single Select (Type 12):**
 
 ```yaml
 - display: Log Level
@@ -213,6 +218,148 @@ commands:
     - WARNING
     - ERROR
 ```
+
+**Multi Select (Type 14):**
+
+```yaml
+- display: Event Types to Fetch
+  name: event_types
+  type: 14
+  required: false
+  options:
+    - authentication
+    - network
+    - endpoint
+    - cloud
+  additionalinfo: Select which event types to ingest. Leave empty for all.
+```
+
+**Credentials (Type 9):**
+
+```yaml
+- display: Credentials
+  name: credentials
+  type: 9
+  required: true
+  section: Connect
+  additionalinfo: Username and password. Supports credential vault references.
+```
+
+---
+
+## sectionOrder and Tabbed Configuration UI
+
+Integrations with 4+ parameters should use `sectionOrder` to organize the configuration UI into tabs:
+
+```yaml
+sectionOrder:
+  - Connect
+  - Collect
+```
+
+Each parameter references its section with `section:` and optionally `advanced: true` to collapse it under "Advanced":
+
+```yaml
+configuration:
+  - display: Server URL
+    name: server_url
+    type: 0
+    required: true
+    section: Connect
+    additionalinfo: Base URL of the API server
+
+  - display: API Key
+    name: api_key
+    type: 4
+    required: true
+    section: Connect
+
+  - display: Trust any certificate (not secure)
+    name: insecure
+    type: 8
+    required: false
+    defaultvalue: 'false'
+    section: Connect
+    advanced: true
+
+  - display: Use system proxy settings
+    name: proxy
+    type: 8
+    required: false
+    defaultvalue: 'false'
+    section: Connect
+    advanced: true
+
+  - display: Incident type
+    name: incident_type
+    type: 16
+    required: false
+    section: Collect
+
+  - display: Maximum incidents per fetch
+    name: max_fetch
+    type: 0
+    required: false
+    defaultvalue: '50'
+    section: Collect
+
+  - display: First fetch timestamp
+    name: first_fetch
+    type: 0
+    required: false
+    defaultvalue: 3 days
+    section: Collect
+    additionalinfo: "Date or relative time (e.g., '3 days', '2024-01-01T00:00:00Z')"
+```
+
+**Tab assignment rules:**
+- **Connect** — server URL, credentials, proxy, insecure, API version
+- **Collect** — fetch toggle, incident type, max fetch, first fetch, event type filters
+- **Optimize** (optional) — rarely needed; for log level, caching, batch size
+
+---
+
+## Fetch-Incidents YAML Configuration
+
+Integrations that ingest alerts require these `script` flags:
+
+```yaml
+script:
+  isfetch: true
+  isFetchSamples: true
+```
+
+And these configuration parameters (in the `Collect` section):
+
+| Parameter | Type | Purpose |
+|---|---|---|
+| `incident_type` | 16 | Incident type selector |
+| `max_fetch` | 0 | Max incidents per fetch cycle (default `50`) |
+| `first_fetch` | 0 | How far back to fetch on first run (default `3 days`) |
+| `look_back` | 0 | Lookback window in minutes for late-arriving incidents (default `10`) |
+
+The fetch interval is controlled by the platform (configured when creating the integration instance), not by a YAML parameter.
+
+---
+
+## Credential Vault Configuration
+
+For integrations consuming vault-managed credentials, use a type 9 parameter and set `isFetchCredentials: true`:
+
+```yaml
+configuration:
+  - display: Credentials
+    name: credentials
+    type: 9
+    required: true
+    section: Connect
+    additionalinfo: Username and password. Supports credential vault references.
+
+script:
+  isFetchCredentials: true
+```
+
+At runtime, the platform resolves vault references and passes the resolved `identifier` (username) and `password` to `demisto.params()`.
 
 ---
 
@@ -228,7 +375,7 @@ These are CI/content-pack conventions only — real XSIAM tenant imports do not 
 
 ## Complete Integration Example
 
-A minimal but complete integration YAML ready for XSIAM import:
+A production-ready integration YAML with fetch-incidents, sectionOrder, and credential vault support:
 
 ```yaml
 commonfields:
@@ -238,7 +385,11 @@ commonfields:
 name: Example API
 display: Example API
 category: Utilities
-description: Integrates with the Example API to fetch and query data.
+description: Integrates with the Example API to fetch alerts and query data.
+
+sectionOrder:
+  - Connect
+  - Collect
 
 configuration:
   - display: API Server URL
@@ -247,74 +398,154 @@ configuration:
     required: true
     defaultvalue: https://api.example.com
     additionalinfo: Base URL of the Example API server
+    section: Connect
 
-  - display: API Key
-    name: api_key
-    type: 4
+  - display: Credentials
+    name: credentials
+    type: 9
     required: true
+    section: Connect
+    additionalinfo: Username and API key. Supports credential vault references.
 
   - display: Trust any certificate (not secure)
     name: insecure
     type: 8
     required: false
     defaultvalue: 'false'
+    section: Connect
+    advanced: true
 
   - display: Use system proxy settings
     name: proxy
     type: 8
     required: false
     defaultvalue: 'false'
+    section: Connect
+    advanced: true
+
+  - display: Fetch incidents
+    name: isFetch
+    type: 8
+    required: false
+    defaultvalue: 'true'
+    section: Collect
+
+  - display: Incident type
+    name: incident_type
+    type: 16
+    required: false
+    section: Collect
+
+  - display: Maximum incidents per fetch
+    name: max_fetch
+    type: 0
+    required: false
+    defaultvalue: '50'
+    section: Collect
+
+  - display: First fetch timestamp
+    name: first_fetch
+    type: 0
+    required: false
+    defaultvalue: 3 days
+    section: Collect
+    additionalinfo: "Date or relative time (e.g., '3 days', '2024-01-01T00:00:00Z')"
 
 script:
   script: |-
     from CommonServerPython import *
     from CommonServerUserPython import *
+    import json
 
 
     class ExampleClient(BaseClient):
-        def __init__(self, base_url, api_key, verify=True, proxy=False):
-            super().__init__(base_url=base_url, verify=verify, proxy=proxy)
-            self.api_key = api_key
-
-        def _get_headers(self):
-            return {
-                'Authorization': f'Bearer {self.api_key}',
-                'Content-Type': 'application/json'
-            }
+        def __init__(self, base_url, username, api_key, verify=True, proxy=False):
+            super().__init__(
+                base_url=base_url,
+                verify=verify,
+                proxy=proxy,
+                headers={
+                    'Authorization': f'Bearer {api_key}',
+                    'Content-Type': 'application/json'
+                },
+                retries=3,
+                backoff_factor=1.0,
+            )
+            self.username = username
 
         def get_data(self, query, limit=50):
             return self._http_request(
                 method='GET',
                 url_suffix='/api/v1/data',
-                headers=self._get_headers(),
                 params={'q': query, 'limit': limit}
             )
 
-        def test_connection(self):
-            self._http_request(
+        def list_alerts(self, start_time, end_time, limit=50):
+            return self._http_request(
                 method='GET',
-                url_suffix='/api/v1/health',
-                headers=self._get_headers()
+                url_suffix='/api/v1/alerts',
+                params={'since': start_time, 'until': end_time, 'limit': limit}
             )
+
+        def test_connection(self):
+            self._http_request(method='GET', url_suffix='/api/v1/health')
 
 
     def get_data_command(client, args):
         query = args.get('query')
         limit = arg_to_number(args.get('limit')) or 50
-
         data = client.get_data(query=query, limit=limit)
         items = data.get('items', [])
-
         return CommandResults(
-            readable_output=tableToMarkdown(
-                'Example API - Data Results',
-                items,
-                headers=['ID', 'Name', 'Status']
-            ),
+            readable_output=tableToMarkdown('Example API - Data Results', items, headers=['ID', 'Name', 'Status']),
             outputs_prefix='Example.Data',
             outputs_key_field='id',
             outputs=items
         )
+
+
+    def fetch_incidents(client, params, last_run):
+        start_time, end_time = get_fetch_run_time_range(
+            last_run=last_run,
+            first_fetch=params.get('first_fetch', '3 days'),
+            look_back=int(params.get('look_back', 1)),
+            date_format='%Y-%m-%dT%H:%M:%SZ',
+        )
+        max_fetch = int(params.get('max_fetch', 50))
+        raw_alerts = client.list_alerts(start_time=start_time, end_time=end_time, limit=max_fetch)
+        alerts = raw_alerts.get('alerts', [])
+
+        incidents, new_last_run = filter_incidents_by_duplicates_and_limit(
+            incidents_res=alerts,
+            last_run=last_run,
+            fetch_limit=max_fetch,
+            id_field='id',
+        )
+
+        formatted = []
+        for alert in incidents:
+            formatted.append({
+                'name': alert.get('title', 'Unnamed Alert'),
+                'occurred': alert.get('created_at', ''),
+                'rawJSON': json.dumps(alert),
+                'type': params.get('incident_type', 'Example Alert'),
+                'severity': map_severity(alert.get('severity')),
+            })
+
+        demisto.incidents(formatted)
+        demisto.setLastRun(update_last_run_object(
+            last_run=new_last_run,
+            incidents=incidents,
+            fetch_limit=max_fetch,
+            id_field='id',
+            date_field='created_at',
+        ))
+
+
+    def map_severity(api_severity):
+        return {
+            'informational': 0, 'low': 1, 'medium': 2, 'high': 3, 'critical': 4
+        }.get((api_severity or '').lower(), 0)
 
 
     def test_module(client):
@@ -322,15 +553,24 @@ script:
             client.test_connection()
             return 'ok'
         except DemistoException as e:
-            return f'Connection failed: {str(e)}'
+            if e.res is not None:
+                if e.res.status_code == 401:
+                    return 'Authorization failed — check credentials'
+                if e.res.status_code == 403:
+                    return 'Forbidden — check API key permissions'
+            if 'Connection' in str(e):
+                return f'Connection failed — verify server URL: {e}'
+            raise
 
 
     def main():
         try:
             params = demisto.params()
+            credentials = params.get('credentials', {})
             client = ExampleClient(
                 base_url=params.get('server_url'),
-                api_key=params.get('api_key'),
+                username=credentials.get('identifier', ''),
+                api_key=credentials.get('password', ''),
                 verify=not params.get('insecure', False),
                 proxy=params.get('proxy', False)
             )
@@ -340,6 +580,8 @@ script:
 
             if command == 'test-module':
                 return_results(test_module(client))
+            elif command == 'fetch-incidents':
+                fetch_incidents(client, params, demisto.getLastRun())
             elif command == 'example-get-data':
                 return_results(get_data_command(client, demisto.args()))
             else:
@@ -354,8 +596,10 @@ script:
   type: python
   subtype: python3
   dockerimage: demisto/python3:3.12.12.6947692
-  isfetch: false
+  isfetch: true
+  isFetchSamples: true
   isfetchevents: false
+  isFetchCredentials: true
   runonce: false
 
   commands:
