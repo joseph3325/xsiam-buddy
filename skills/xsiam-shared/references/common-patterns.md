@@ -200,6 +200,12 @@ The `demisto` object is the interface between your code and the platform. It is 
 | `demisto.getLastMirrorRun()` | `dict` | LastMirrorRun object |
 | `demisto.setLastMirrorRun(obj)` | `None` | Store LastMirrorRun |
 
+```python
+# State management examples
+last_run = demisto.getLastRun()  # Returns dict, empty {} on first run
+demisto.setLastRun({'last_fetch': '2024-01-01T00:00:00Z', 'found_ids': ['id1', 'id2']})
+```
+
 ### Integration Context (Persistent Cache)
 
 | Method | Returns | Description |
@@ -208,6 +214,15 @@ The `demisto` object is the interface between your code and the platform. It is 
 | `demisto.setIntegrationContext(context)` | `None` | Save integration context |
 | `demisto.getIntegrationContextVersioned(refresh)` | `dict` | Versioned context (includes `version` key for optimistic locking) |
 | `demisto.setIntegrationContextVersioned(context, version, sync)` | `None` | Save with optimistic locking |
+
+```python
+# Integration context examples — persistent across commands within same instance
+ctx = demisto.getIntegrationContext()  # Returns dict, empty {} initially
+demisto.setIntegrationContext({'token': 'abc123', 'expires': 1700000000})
+
+# Create incidents programmatically (outside fetch-incidents)
+demisto.createIncidents([{'name': 'Alert 1', 'occurred': '2024-01-01T00:00:00Z', 'rawJSON': '{}'}])
+```
 
 ### Indicators
 
@@ -257,6 +272,43 @@ limit = arg_to_number(args.get('limit'), arg_name='limit', required=False) or 50
 since = arg_to_datetime(args.get('since'), arg_name='since', required=False)
 if since:
     since_str = since.strftime('%Y-%m-%dT%H:%M:%SZ')
+```
+
+### Additional CommonServerPython Helpers
+
+**`assign_params()`** — build request parameter dicts, automatically stripping `None` values:
+
+```python
+params = assign_params(page=page, page_size=page_size, query=query)
+# Only includes keys with non-None values — clean API call params
+```
+
+**Time conversion utilities:**
+
+```python
+date_to_timestamp('2024-01-15T10:30:00Z')  # → epoch milliseconds
+timestamp_to_datestring(1705312200000)       # → '2024-01-15T10:30:00Z'
+```
+
+**`CommandRunner`** — batch execution of multiple sub-commands with error isolation:
+
+```python
+runner = CommandRunner()
+runner.add_command(ip_command, args={'ip': '1.2.3.4'}, name='ip')
+runner.add_command(domain_command, args={'domain': 'example.com'}, name='domain')
+results = runner.execute()
+return_results(results)
+```
+
+**`IndicatorsTimeline`** — add timeline entries to indicator enrichment results:
+
+```python
+timeline = IndicatorsTimeline(
+    indicators=['1.2.3.4'],
+    message='First seen by VendorName',
+    category='Integration Update',
+)
+# Pass to CommandResults via indicators_timeline=timeline
 ```
 
 ---
@@ -327,14 +379,50 @@ def map_vendor_score(risk_level: str) -> int:
 - `DBotScore.Reliability.C_FAIRLY_RELIABLE`
 - `DBotScore.Reliability.D_NOT_USUALLY_RELIABLE`
 
-**Available `Common.*` indicator types:**
-- `Common.IP(ip, dbot_score, asn, organization, geo_country, ...)`
-- `Common.Domain(domain, dbot_score, dns_records, ...)`
-- `Common.URL(url, dbot_score, ...)`
-- `Common.File(md5, sha1, sha256, dbot_score, name, size, ...)`
-- `Common.CVE(id, cvss, description, ...)`
-- `Common.Account(id, dbot_score, ...)`
-- `Common.Email(address, dbot_score, ...)`
+**Available `Common.*` indicator types** with key fields:
+
+```python
+# IP enrichment (shown in full example above)
+Common.IP(ip, dbot_score, asn, organization, geo_country)
+
+# Domain enrichment
+dbot_score = Common.DBotScore('example.com', DBotScoreType.DOMAIN, 'VendorName', Common.DBotScore.GOOD)
+domain = Common.Domain(
+    domain='example.com',
+    dbot_score=dbot_score,
+    registrar_name='RegistrarCo',
+    creation_date='2020-01-01',
+    expiration_date='2025-01-01',
+    name_servers='ns1.example.com,ns2.example.com',
+)
+
+# File enrichment
+dbot_score = Common.DBotScore('abc123hash', DBotScoreType.FILE, 'VendorName', Common.DBotScore.BAD)
+file_indicator = Common.File(
+    md5='abc123',
+    sha1='def456',
+    sha256='ghi789',
+    dbot_score=dbot_score,
+    size=1024,
+    file_type='PE',
+    name='malware.exe',
+)
+
+# URL enrichment
+dbot_score = Common.DBotScore('https://evil.com', DBotScoreType.URL, 'VendorName', Common.DBotScore.SUSPICIOUS)
+url = Common.URL(
+    url='https://evil.com',
+    dbot_score=dbot_score,
+    detection_engines=10,
+    positive_detections=3,
+)
+
+# CVE enrichment
+Common.CVE(id='CVE-2024-1234', cvss='9.8', published='2024-01-15', modified='2024-02-01',
+           description='Remote code execution vulnerability')
+
+# Also available: Common.Account, Common.Email
+```
 
 ---
 
@@ -376,6 +464,24 @@ return CommandResults(
 - `COMMUNICATES_WITH`
 - `USES`
 - `ATTRIBUTED_TO`
+
+### searchIndicators Pagination
+
+For large indicator queries, use `searchAfter` to paginate:
+
+```python
+query = 'type:IP'
+search_after = None
+all_indicators = []
+
+while True:
+    result = demisto.searchIndicators(query=query, size=100, searchAfter=search_after)
+    indicators = result.get('iocs', [])
+    if not indicators:
+        break
+    all_indicators.extend(indicators)
+    search_after = result.get('searchAfter')
+```
 
 ---
 
