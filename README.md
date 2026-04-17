@@ -25,6 +25,13 @@ Generate multi-command Python integrations with `BaseClient` and a corresponding
 
 ---
 
+### `xsiam-event-collectors`
+Generate event collector integrations that ingest vendor events directly into the XSIAM data lake via `send_events_to_xsiam()`. Produces unified `.yml` files with Python embedded in `script.script: |-`, `isfetchevents: true`, proper `_time` normalization, and deduplication handling. Unlike regular integrations that create incidents, event collector data lands in the data lake and is queryable via XQL.
+
+**Example triggers:** "create an event collector", "build an event collector", "ingest events into XSIAM", "fetch events"
+
+---
+
 ### `xsiam-xql`
 Generate XQL queries from natural language descriptions. Covers threat hunting, investigation, and analytics across all common XSIAM datasets. Uses tiered reference loading — core XQL references always load while advanced functions, extended datasets, and federated search references load on-demand based on query requirements.
 
@@ -69,6 +76,7 @@ Each skill draws from reference files included in the plugin:
 | XQL advanced functions | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Array, JSON, and window functions (on-demand) |
 | XQL datasets extended | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Third-party, email, and CIE datasets (on-demand) |
 | XQL federated search | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | External S3/GCS/Azure querying (on-demand) |
+| Event collector spec | xsiam-event-collectors | `send_events_to_xsiam()`, `_time` handling, fetch-events flow |
 | Correlation rule spec | xsiam-correlations | JSON export format, scheduling, severity, MITRE mapping |
 | Correlation examples | xsiam-correlations | Complete example correlation rule JSON files |
 | SPL-to-XQL mapping | xsiam-splunk-to-xql | SPL command and function translation reference |
@@ -86,6 +94,9 @@ Describe what you want to build in natural language. Examples:
 
 ```
 Create an integration for CrowdStrike Falcon that can get detections and contain hosts
+```
+```
+Create an event collector for Okta that ingests system log events into the data lake
 ```
 ```
 Write a standalone script that enriches an IP address using VirusTotal
@@ -116,6 +127,7 @@ xsiam-buddy/
 ├── skills/
 │   ├── xsiam-scripts/          # Standalone script generation
 │   ├── xsiam-integrations/     # Multi-command integration generation
+│   ├── xsiam-event-collectors/ # Event collector integration generation
 │   ├── xsiam-xql/              # XQL query generation
 │   ├── xsiam-correlations/     # Correlation rule JSON generation
 │   ├── xsiam-splunk-to-xql/    # SPL to XQL translation
@@ -131,6 +143,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.4.0 |
+| Version | 0.7.0 |
 | Author | joseph3325 |
 | Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |
