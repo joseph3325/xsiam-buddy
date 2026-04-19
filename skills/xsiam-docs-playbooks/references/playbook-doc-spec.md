@@ -97,11 +97,10 @@ Detect convergence: if multiple paths lead to the same task ID, that task is a m
 
 ## Section Specifications
 
-### 1. Title Banner
+### 1. Playbook Title
 
-**Content:** Playbook name from `name` field.
-**Subtitle:** First sentence of `description`, or the full description if short.
-**Visual:** Full-width colored bar (dark indigo background, white text).
+**Content:** Playbook name from `name` field, rendered as a standard `<h4>` heading.
+**Visual:** Navy text with orange bottom border — no banner, no background block.
 
 ### 2. Overview Card
 
