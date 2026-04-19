@@ -60,10 +60,17 @@ Generate playbook YAML definitions (XSOAR-compatible) with companion Markdown do
 
 ---
 
-### `xsiam-docs`
-Generate all types of XSIAM documentation: integration READMEs, runbooks/SOPs, release notes, IR procedures, and design documents. Uses structured section templates for each doc type.
+### `xsiam-docs-playbooks`
+Generate professional HTML documentation for XSIAM/XSOAR playbooks. Produces Google Docs-ready HTML with visual flow diagrams, task inventories, decision logic tables, and integration dependency maps — all styled with the Palo Alto Networks brand palette.
 
-**Example triggers:** "write documentation", "create a runbook", "release notes", "IR procedure"
+**Example triggers:** "document a playbook", "create playbook documentation", "playbook reference doc", "explain this playbook"
+
+---
+
+### `xsiam-docs-scripts`
+Generate professional HTML documentation for XSIAM/XSOAR automation scripts. Produces Google Docs-ready HTML with data flow diagrams, argument/output reference tables, logic walkthroughs, and script-type-specific guidance (standard, transformer, filter, dynamic-section, field-change-triggered, widget).
+
+**Example triggers:** "document a script", "create script documentation", "script reference doc", "explain this script"
 
 ## Bundled Knowledge
 
@@ -86,7 +93,9 @@ Each skill draws from reference files included in the plugin:
 | Integration patterns | xsiam-integrations | BaseClient, pagination, error handling patterns |
 | Common patterns | xsiam-scripts, xsiam-integrations | Shared Python patterns: CommandResults, indicators, logging |
 | Playbook YAML schema | xsiam-playbooks | Task types, conditions, and sub-playbook references |
-| Documentation templates | xsiam-docs | Section templates for each doc type |
+| Playbook doc spec | xsiam-docs-playbooks | Section specs, YAML extraction, content guidelines |
+| Script doc spec | xsiam-docs-scripts | Section specs, Python analysis, type-specific docs |
+| HTML styling guide | xsiam-docs-playbooks, xsiam-docs-scripts | PAN brand palette, Google Docs-compatible HTML patterns |
 
 ## Usage
 
@@ -132,7 +141,8 @@ xsiam-buddy/
 │   ├── xsiam-correlations/     # Correlation rule JSON generation
 │   ├── xsiam-splunk-to-xql/    # SPL to XQL translation
 │   ├── xsiam-playbooks/        # Playbook generation
-│   ├── xsiam-docs/             # Documentation generation
+│   ├── xsiam-docs-playbooks/   # Playbook documentation (HTML)
+│   ├── xsiam-docs-scripts/     # Script documentation (HTML)
 │   └── xsiam-shared/           # Shared XQL references and Python patterns
 └── docs/
     └── plans/                  # Design documents
@@ -143,6 +153,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.7.0 |
+| Version | 0.8.0 |
 | Author | joseph3325 |
 | Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |
