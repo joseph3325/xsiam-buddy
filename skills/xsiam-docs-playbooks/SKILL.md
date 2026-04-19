@@ -27,6 +27,15 @@ Read these reference files:
 
 Google Docs strips markdown formatting on paste. HTML with inline styles pastes cleanly — tables, colors, backgrounds, and typography all transfer. Every style must be inline (no `<style>` blocks or CSS classes) because Google Docs ignores them.
 
+## Header Hierarchy
+
+The generated documentation gets pasted under a Heading 3 in Google Docs. To maintain correct nesting within the surrounding document:
+- Use `<h4>` for top-level section headers (Flow Diagram, Task Inventory, etc.)
+- Use `<h5>` for sub-section headers within those sections
+- Never use `<h1>`, `<h2>`, or `<h3>` — those would conflict with or outrank the parent heading in the document
+
+The title banner is a styled table, not a heading tag, so it's unaffected.
+
 ## Workflow
 
 ### 1. Get the Playbook Source

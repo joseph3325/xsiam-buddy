@@ -108,17 +108,19 @@ A metadata summary table. Uses the light blue-gray background for label cells.
 
 ## Section Headers
 
+The output is designed to be pasted under a Heading 3 in Google Docs, so use `<h4>` as the top-level section header and `<h5>` for sub-sections. This keeps the hierarchy consistent with the surrounding document.
+
 ```html
-<h2 style="color: #003366; border-bottom: 2px solid #FA582D; padding-bottom: 8px; margin-top: 32px; margin-bottom: 16px; font-size: 20px;">
+<h4 style="color: #003366; border-bottom: 2px solid #FA582D; padding-bottom: 8px; margin-top: 32px; margin-bottom: 16px; font-size: 18px;">
   Section Title
-</h2>
+</h4>
 ```
 
 For sub-sections:
 ```html
-<h3 style="color: #004080; margin-top: 24px; margin-bottom: 12px; font-size: 16px;">
+<h5 style="color: #004080; margin-top: 24px; margin-bottom: 12px; font-size: 15px;">
   Sub-section Title
-</h3>
+</h5>
 ```
 
 ---
