@@ -21,7 +21,7 @@
         "./skills/xsiam-correlations",
         "./skills/xsiam-splunk-to-xql",
         "./skills/xsiam-playbooks",
-        "./skills/xsiam-docs",
+        "./skills/xsiam-docs-playbooks",
         "./skills/xsiam-shared"
       ]
     }

@@ -39,9 +39,10 @@ skills/
   xsiam-playbooks/     # Playbook YAML + companion docs
     SKILL.md
     references/playbook-format.md
-  xsiam-docs/          # Documentation (READMEs, runbooks, SOPs, etc.)
+  xsiam-docs-playbooks/ # Playbook documentation (HTML for Google Docs)
     SKILL.md
-    references/doc-templates.md
+    references/playbook-doc-spec.md
+    references/html-styling-guide.md
   xsiam-shared/
     references/
       common-patterns.md          # Shared Python patterns (scripts + integrations)
