@@ -93,12 +93,16 @@ Three skills share a common XQL reference layer under `xsiam-shared/references/`
 ## Key XSIAM Conventions to Preserve
 
 - **YAML field order for scripts** matters — must match real XSIAM export order: `commonfields → vcShouldKeepItemLegacyProdMachine → name → script → type → tags → comment → enabled → args → outputs → scripttarget → subtype → pswd → runonce → dockerimage → runas → engineinfo → mainengineinfo`
+- **YAML field order for integrations** matters — must match real XSIAM export order: `commonfields → vcShouldKeepItemLegacyProdMachine → name → display → category → description → sectionorder → configuration → script`
+- **`vcShouldKeepItemLegacyProdMachine: false`** — always present after `commonfields` in both scripts and integrations
+- **`sectionorder`** — lowercase 'o' (not camelCase `sectionOrder`), simple list format matching real XSIAM exports
+- **`supportedModules: []`** — must be the first field on every `configuration` parameter, every `commands` entry, and every `arguments` entry in integration/event-collector YAML. For scripts, every `args` entry must have it as its first key.
 - **Never include** `fromversion`, `marketplaces`, `tests`, `timeout` — content-pack CI fields only
 - **Always include** `register_module_line()` calls as the first and last lines of embedded Python — required for platform line-number tracking
 - Docker image: always pinned `3.12.x` (e.g., `demisto/python3:3.12.12.6947692`), never `:latest`
 - `demisto.alert()` for XSIAM; `demisto.incident()` is XSOAR equivalent
-- Every `args` entry must have `supportedModules: []` as its first key
 - Arg defaults use `defaultValue:` (not `default:`); list args include `isArray: true`
+- Config params should include `additionalinfo:` tooltips and `section:` for tab assignment
 
 ## Knowledge Source
 

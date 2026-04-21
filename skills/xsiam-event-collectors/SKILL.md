@@ -8,7 +8,7 @@ description: >
   XSIAM data lake. For standard API integrations that create incidents, use the
   xsiam-integrations skill instead. For standalone data-processing scripts, use
   xsiam-scripts.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # XSIAM Event Collector Development
@@ -18,8 +18,8 @@ Generate importable unified YAML files for Cortex XSIAM event collector integrat
 ## Before Starting
 
 Read the reference files:
-- `references/event-collector-spec.md` — Event collector YAML differences, `send_events_to_xsiam()`, `_time` handling, fetch-events flow, complete example
-- `../xsiam-integrations/references/integration-yaml-spec.md` — Base integration YAML structure, configuration parameter types, sectionOrder
+- `references/event-collector-spec.md` — Event collector YAML structure (field order, `supportedModules`, sectionorder), `send_events_to_xsiam()`, `_time` handling, fetch-events flow, `should_push_events` pattern, complete example
+- `../xsiam-integrations/references/integration-yaml-spec.md` — Base integration YAML structure, configuration parameter types, sectionorder
 - `../xsiam-integrations/references/integration-patterns.md` — Python patterns: BaseClient, auth, pagination, rate limiting, proxy/SSL
 - `../xsiam-shared/references/common-patterns.md` — Shared patterns: outputs, demisto API, arg parsing
 
@@ -28,9 +28,9 @@ Read the reference files:
 Event collectors are **specialized integrations** that ingest vendor events into the XSIAM data lake. They authenticate to a vendor's events/logs API, fetch events on a schedule, and push them to XSIAM via `send_events_to_xsiam()`.
 
 **When to use which skill:**
-- Events → data lake → XQL queryable → **event collector** (this skill)
-- Alerts → incident queue → playbook-actionable → **integration with isfetch** (xsiam-integrations skill)
-- Standalone data processing → **script** (xsiam-scripts skill)
+- Events -> data lake -> XQL queryable -> **event collector** (this skill)
+- Alerts -> incident queue -> playbook-actionable -> **integration with isfetch** (xsiam-integrations skill)
+- Standalone data processing -> **script** (xsiam-scripts skill)
 
 Use an event collector when:
 - Ingesting logs, audit trails, or telemetry into the XSIAM data lake
@@ -54,36 +54,52 @@ Determine:
 | Auth scheme | Pattern |
 |---|---|
 | API key in header | Bearer token via `_get_headers()` |
+| API key (type 4 encrypted) | `params.get('api_key')` directly |
+| Credentials (type 9 auth) | `params.get('credentials', {}).get('password', '')` |
 | Username + password | `HTTPBasicAuth` via `_http_request(auth=)` |
 | OAuth2 client credentials | Token caching with `getIntegrationContext()` + expiry |
-| OAuth2 authorization code | Device/auth code flow (rare for server-to-server) |
 | Certificate-based | Mutual TLS via `_http_request()` cert params |
 
 ### 2. Generate the Unified YAML
 
-Build a single `.yml` file following these ordered sub-steps:
+Build a single `.yml` file following these ordered sub-steps. The YAML structure must match real XSIAM export format for successful import.
 
-1. **Top-level metadata** — `commonfields` (`id` must end with `EventCollector`, `version: -1`), `name`, `display`, `category`, `description`
-2. **`sectionOrder`** — define UI tabs: `Connect`, `Collect`
-3. **`configuration`** — auth params in Connect section; `first_fetch`, `max_events` in Collect section; `insecure`/`proxy` in Connect with `advanced: true`
-4. **`script` mapping** — set flags: `type: python`, `subtype: python3`, `dockerimage` (pinned `3.12.x`), `isfetchevents: true`, `isfetch: false`, `runonce: false`
+1. **Top-level metadata** — `commonfields` (`id` must end with `EventCollector`, `version: -1`), then `vcShouldKeepItemLegacyProdMachine: false`, then `name`, `display`, `category`, `description`
+2. **`sectionorder`** — lowercase 'o', simple list format: `- Connect`, `- Collect`
+3. **`configuration`** — Each parameter starts with `supportedModules: []`, then `section:`, then remaining fields. Auth params in Connect section; `first_fetch`, `max_events` in Collect section; `insecure`/`proxy` in Connect with `advanced: true`. Always include `additionalinfo` tooltips.
+4. **`script` mapping** — set flags: `type: python`, `subtype: python3`, `dockerimage` (pinned `3.12.x`), `isfetchevents: true`, `isfetch: false`, `isFetchSamples: false`, `runonce: false`
 5. **Command definitions** — three required commands:
-   - `test-module` (no arguments, no outputs — implicit platform command)
-   - `fetch-events` (no arguments — implicit platform command, called on schedule)
-   - `<prefix>-get-events` with `limit` and `start_time` arguments (manual debug command — listed in `commands` array)
-6. **Embed Python code** — insert into `script.script: |-` last
+   - `test-module` (implicit platform command — NOT listed in `commands` array)
+   - `fetch-events` (implicit platform command — NOT listed in `commands` array)
+   - `<prefix>-get-events` with `should_push_events`, `limit`, and `start_time` arguments (listed in `commands` array). Each command and argument starts with `supportedModules: []`.
+6. **Embed Python code** — insert into `script.script: |-` with `register_module_line()` calls as the first and last lines
 
-**Key structural difference from regular integrations:** `isfetchevents: true` instead of `isfetch: true`. Events go to the data lake via `send_events_to_xsiam()`, not the incident queue via `demisto.incidents()`.
+### Configuration Parameter Field Order
+
+Each configuration parameter follows this field order (matching real XSIAM exports):
+
+```
+supportedModules → section → advanced (if true) → display → displaypassword (if type 9) → name → type → required → defaultvalue → additionalinfo → options (if select) → hiddenusername (if type 9)
+```
+
+### Command and Argument Field Order
+
+Commands: `supportedModules` -> `name` -> `description` -> `arguments`
+
+Arguments: `supportedModules` -> `name` -> `description` -> `required` -> `defaultValue` -> `predefined` (if applicable) -> `isArray` (if applicable)
 
 ### 3. Python Code Conventions
 
 Same BaseClient pattern as integrations, with these event-collector-specific differences:
-- `fetch-events` command calls `send_events_to_xsiam(events, vendor, product)` — never `demisto.incidents()`
-- `<prefix>-get-events` is a debug command: returns `CommandResults` with events as readable output (does NOT send to XSIAM)
+
+- **`register_module_line()`** — include as first and last lines of the embedded Python code, matching the integration name (e.g., `register_module_line('VendorNameEventCollector', 'start', __line__())`)
+- **Global constants** — define `VENDOR` and `PRODUCT` as module-level constants, reference them in `send_events_to_xsiam()` calls
+- **`fetch-events`** command calls `send_events_to_xsiam(events, vendor, product)` — never `demisto.incidents()`
+- **`<prefix>-get-events`** is a debug command: accepts `should_push_events` argument. When false, returns `CommandResults` with events as readable output only. When true, also calls `send_events_to_xsiam()`.
 - Every event must have a `_time` field in ISO 8601 format — map from the source timestamp field during fetch
 - `demisto.getLastRun()` / `demisto.setLastRun()` tracks last event timestamp per event type
 - For multiple event types, call `send_events_to_xsiam()` separately for each vendor/product pair
-- Standard imports: `CommonServerPython`, `CommonServerUserPython`, `dateparser` (do **not** include `demistomock` unless user requests it)
+- Standard imports: `CommonServerPython`, `CommonServerUserPython`, `dateparser`. The `demistomock` import (`import demistomock as demisto`) may be present during development/testing but **must be removed** from the final unified YAML — the platform provides the `demisto` object natively. Before delivering the YAML, scan the embedded Python and strip any `demistomock` import line.
 
 ### 4. File Output
 
@@ -98,26 +114,33 @@ Optionally also generate:
 
 Before delivering, verify:
 - [ ] Integration name ends with `EventCollector` in `commonfields.id`, `name`, and `display`
-- [ ] `script.isfetchevents` is `true`
-- [ ] `script.isfetch` is `false`
-- [ ] Three commands present: `test-module`, `fetch-events`, `<prefix>-get-events`
+- [ ] `vcShouldKeepItemLegacyProdMachine: false` present after `commonfields`
+- [ ] `sectionorder` uses lowercase 'o' (not camelCase)
+- [ ] `script.isfetchevents` is `true`; `script.isfetch` is `false`
+- [ ] Every configuration parameter has `supportedModules: []` as its first field
+- [ ] Every command definition has `supportedModules: []` as its first field
+- [ ] Every argument definition has `supportedModules: []` as its first field
+- [ ] Config params have `section:` field assigning them to Connect or Collect
+- [ ] Config params have `additionalinfo:` tooltips
+- [ ] `insecure` and `proxy` params have `advanced: true`
+- [ ] Only `<prefix>-get-events` is listed in `commands` array — `test-module` and `fetch-events` are NOT listed (they are implicit platform commands)
+- [ ] `<prefix>-get-events` has `should_push_events` argument with `predefined` values
 - [ ] `fetch-events` calls `send_events_to_xsiam(events, vendor, product)` — not `demisto.incidents()`
-- [ ] `<prefix>-get-events` returns `CommandResults` — does NOT call `send_events_to_xsiam()`
+- [ ] `<prefix>-get-events` respects `should_push_events` flag
+- [ ] `VENDOR` and `PRODUCT` defined as module-level constants
 - [ ] `vendor` and `product` strings are lowercase
 - [ ] Every event has a `_time` field in ISO 8601 format
 - [ ] `demisto.setLastRun()` tracks last event timestamp
+- [ ] `register_module_line()` present as first and last lines of Python code
 - [ ] Python code is embedded in `script.script: |-` (nested, not top-level)
 - [ ] Python indentation is consistent within the YAML block
-- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` omitted unless user requested it
+- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` import **removed** from final output
 - [ ] `main()` has `try/except` with `return_error()`
 - [ ] `BaseClient` subclass used for all HTTP calls via `_http_request()`
 - [ ] `test-module` command is implemented and routes correctly in `main()`
 - [ ] `script.type` is `python` (not `python3`); `script.subtype` is `python3`
 - [ ] Docker image is a pinned `3.12.x` version (not `:latest`)
-- [ ] `sectionOrder` present with Connect/Collect tabs
-- [ ] Configuration params have `section` and `advanced` where appropriate
 - [ ] **Do not include** `fromversion`, `marketplaces`, `tests`, `timeout` — content-pack CI fields only
-- [ ] **Do not include** `register_module_line()` calls — platform-injected on export
 - [ ] No tab characters; consistent YAML indentation throughout
 
 ## Key Conventions
@@ -127,6 +150,7 @@ Before delivering, verify:
 - Vendor/product strings: lowercase (e.g., `vendor='vendorname'`, `product='audit'`)
 - Python functions and variables: `snake_case`; class names: `PascalCase`
 - Docker image: pinned `3.12.x` (e.g., `demisto/python3:3.12.12.6947692`) — check your tenant for the latest available build
-- Always include `proxy` and `insecure` configuration params
+- Always include `proxy` and `insecure` configuration params (with `advanced: true`)
 - Use `@logger` decorator on command functions for debug logging
 - Handle pagination — never assume single-page API results
+- Define `VENDOR` and `PRODUCT` as module-level constants for consistency

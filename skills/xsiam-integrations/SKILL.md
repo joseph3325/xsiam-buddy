@@ -64,19 +64,19 @@ Determine:
 
 Build a single `.yml` file following these ordered sub-steps:
 
-1. **Top-level metadata** — `commonfields` (`id`, `version: -1`), `name`, `display`, `category`, `description`
-2. **`sectionOrder`** — define UI tabs: `Connect`, `Collect` (if fetching), `Optimize` (optional)
-3. **`configuration`** — auth and connection parameters; assign each param a `section` and optionally `advanced: true`
+1. **Top-level metadata** — `commonfields` (`id`, `version: -1`), then `vcShouldKeepItemLegacyProdMachine: false`, then `name`, `display`, `category`, `description`
+2. **`sectionorder`** — lowercase 'o', simple list: `- Connect`, `- Collect` (if fetching), `- Optimize` (optional)
+3. **`configuration`** — each param starts with `supportedModules: []`, then `section:`, then remaining fields. Auth and connection params in Connect; fetch params in Collect; `insecure`/`proxy` in Connect with `advanced: true`. Include `additionalinfo:` tooltips.
 4. **`script` mapping** — set flags: `type: python`, `subtype: python3`, `dockerimage` (pinned `3.12.x`), `isfetch` (true if fetching incidents), `isfetchevents: false`, `isFetchSamples` (true if fetching), `runonce: false`
-5. **Command definitions** — full argument specs (`supportedModules`, `defaultValue`, `isArray`, `predefined`) and output specs (`contextPath`, `type`)
-6. **Embed Python code** — insert into `script.script: |-` last
+5. **Command definitions** — each command and argument starts with `supportedModules: []`. Full argument specs (`defaultValue`, `isArray`, `predefined`) and output specs (`contextPath`, `type`)
+6. **Embed Python code** — insert into `script.script: |-` last, with `register_module_line()` as the first and last lines
 
 **Key structural difference from scripts:** For integrations, `script` is a **mapping** with nested fields. The Python code lives in `script.script`, not at the top level.
 
 ### 3. Python Code Conventions
 
 The embedded Python follows XSOAR/XSIAM conventions:
-- Standard imports: `CommonServerPython`, `CommonServerUserPython` (do **not** include `demistomock` unless user requests it)
+- Standard imports: `CommonServerPython`, `CommonServerUserPython`. The `demistomock` import (`import demistomock as demisto`) may be present during development/testing but **must be removed** from the final unified YAML — the platform provides the `demisto` object natively. Before delivering the YAML, scan the embedded Python and strip any `demistomock` import line.
 - `BaseClient` subclass with `_http_request()` for all API calls
 - Command routing in `main()`: `if command == 'test-module': ... elif command == 'vendor-action': ...`
 - Parse args with `argToList()`, `argToBoolean()`, `arg_to_number()`, `arg_to_datetime()` — never raw casting
@@ -100,7 +100,7 @@ Optionally also generate:
 Before delivering, verify:
 - [ ] Python code is embedded in `script.script: |-` (nested, not top-level)
 - [ ] Python indentation is consistent within the YAML block
-- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` omitted unless user requested it
+- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` import **removed** from final output
 - [ ] `main()` has `try/except` with `return_error()`
 - [ ] `BaseClient` subclass used for all HTTP calls via `_http_request()`
 - [ ] `test-module` command is implemented and routes correctly in `main()`
@@ -110,7 +110,7 @@ Before delivering, verify:
 - [ ] All command arguments have descriptions
 - [ ] All outputs have `contextPath`, `description`, and `type`
 - [ ] **Do not include** `fromversion`, `marketplaces`, `tests`, `timeout` — content-pack CI fields only
-- [ ] **Do not include** `register_module_line()` calls — platform-injected on export
+- [ ] **Always include** `register_module_line()` calls as first and last lines of embedded Python
 - [ ] No tab characters; consistent YAML indentation throughout
 - [ ] Arg parsing uses helpers (`argToList`, `argToBoolean`, etc.), not raw casting
 - [ ] Fetch integrations: `isfetch: true` in script section; `fetch-incidents` routes to `demisto.incidents()`
@@ -118,8 +118,11 @@ Before delivering, verify:
 - [ ] Indicator commands: `DBotScore` + `Common.*` indicator object passed to `CommandResults`
 - [ ] Token-caching integrations: integration context used, not global variables
 - [ ] Sensitive config params use `type: 4` (encrypted) or `type: 9` (credential vault pair)
-- [ ] `sectionOrder` present when integration has 4+ configuration parameters
-- [ ] Configuration params have `section: Connect`/`Collect` and `advanced: true` where appropriate
+- [ ] `vcShouldKeepItemLegacyProdMachine: false` present after `commonfields`
+- [ ] `sectionorder` (lowercase 'o') present when integration has 4+ configuration parameters
+- [ ] Every configuration parameter has `supportedModules: []` as its first field
+- [ ] Every command and argument has `supportedModules: []` as its first field
+- [ ] Configuration params have `section: Connect`/`Collect`, `advanced: true` where appropriate, and `additionalinfo:` tooltips
 - [ ] Fetch incidents: dedup IDs tracked in `lastRun`, `isFetchSamples: true` set in script section
 - [ ] Polling: `@polling_function` decorator or `ScheduledCommand` used — never `time.sleep()` in regular commands
 - [ ] Proxy + insecure params have `section: Connect` and `advanced: true`

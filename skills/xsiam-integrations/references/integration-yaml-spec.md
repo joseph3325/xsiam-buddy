@@ -8,50 +8,79 @@ Integrations use **unified YAML** for import: a single `.yml` file containing me
 
 For integrations, the `script` key is a **mapping** (not a string). The Python code lives inside `script.script`.
 
-### Top-Level Fields
+### Top-Level Field Order
+
+Unified YAML follows this exact field order (matching real XSIAM exports):
 
 ```yaml
 commonfields:
-  id: IntegrationName      # Unique identifier — matches the integration name
-  version: -1              # Always -1
-
+  id: IntegrationName
+  version: -1
+vcShouldKeepItemLegacyProdMachine: false
 name: Integration Display Name
 display: Integration Display Name
-category: Utilities        # See category values below
+category: Utilities
 description: One-line description of what this integration does.
+sectionorder:
+- Connect
+- Collect
+configuration:
+  # ... params ...
+script:
+  # ... code, flags, commands ...
 ```
 
-**Common `category` values:** `Authentication`, `Utilities`, `Messaging`, `Network Security`, `Vulnerability Management`, `Case Management`, `Endpoint Detection and Response`, `SIEM`, `Forensics`, `Data Enrichment/Lookup`
+**Key structural notes:**
+- `vcShouldKeepItemLegacyProdMachine: false` goes between `commonfields` and `name`
+- `sectionorder` uses lowercase 'o' (not camelCase `sectionOrder`) — this matches real XSIAM export format
+- `sectionorder` is a simple list of section names; each param declares its section via the `section:` field
+
+**Common `category` values:** `Authentication`, `Utilities`, `Messaging`, `Network Security`, `Vulnerability Management`, `Case Management`, `Endpoint Detection and Response`, `Analytics & SIEM`, `Forensics`, `Data Enrichment/Lookup`
 
 ### `configuration` Section
 
-Array of parameters shown in the integration instance settings UI:
+Array of parameters shown in the integration instance settings UI. Each parameter starts with `supportedModules: []` and includes a `section:` field. Fields follow this order:
+
+```
+supportedModules → section → advanced (if true) → display → displaypassword (if type 9) → name → type → required → defaultvalue → additionalinfo → options (if select) → hiddenusername (if type 9)
+```
 
 ```yaml
 configuration:
-  - display: Server URL
-    name: server_url
-    type: 0
-    required: true
-    defaultvalue: https://api.example.com
-    additionalinfo: Base URL of the API server
+- supportedModules: []
+  section: Connect
+  display: Server URL
+  name: server_url
+  type: 0
+  required: true
+  defaultvalue: https://api.example.com
+  additionalinfo: Base URL of the API server.
 
-  - display: API Key
-    name: api_key
-    type: 4
-    required: true
+- supportedModules: []
+  section: Connect
+  display: API Key
+  name: api_key
+  type: 4
+  required: true
+  additionalinfo: API key for authentication.
 
-  - display: Trust any certificate (not secure)
-    name: insecure
-    type: 8
-    required: false
-    defaultvalue: 'false'
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Trust any certificate (not secure)
+  name: insecure
+  type: 8
+  required: false
+  defaultvalue: 'false'
 
-  - display: Use system proxy settings
-    name: proxy
-    type: 8
-    required: false
-    defaultvalue: 'false'
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Use system proxy settings
+  name: proxy
+  type: 8
+  required: false
+  defaultvalue: 'false'
 ```
 
 Always include `insecure` and `proxy` params — they are expected by `BaseClient`.
@@ -63,6 +92,8 @@ The `script` key is a **mapping** with nested fields:
 ```yaml
 script:
   script: |-
+    register_module_line('IntegrationName', 'start', __line__())
+
     from CommonServerPython import *
     from CommonServerUserPython import *
 
@@ -125,64 +156,73 @@ script:
 
     if __name__ in ('__main__', '__builtin__', 'builtins'):
         main()
+
+    register_module_line('IntegrationName', 'end', __line__())
   type: python
   subtype: python3
   dockerimage: demisto/python3:3.12.12.6947692
   isfetch: false
   isfetchevents: false
   runonce: false
-
   commands:
-    - name: vendor-get-data
-      description: Retrieves data from the Vendor API
-      arguments:
-        - name: query
-          description: Search query string
-          required: true
-        - name: limit
-          description: Maximum number of results to return (default 50)
-          required: false
-          defaultValue: '50'
-      outputs:
-        - contextPath: Vendor.Data.ID
-          description: Result ID
-          type: string
-        - contextPath: Vendor.Data.Name
-          description: Result name
-          type: string
+  - supportedModules: []
+    name: vendor-get-data
+    description: Retrieves data from the Vendor API
+    arguments:
+    - supportedModules: []
+      name: query
+      description: Search query string
+      required: true
+    - supportedModules: []
+      name: limit
+      description: Maximum number of results to return
+      required: false
+      defaultValue: '50'
+    outputs:
+    - contextPath: Vendor.Data.ID
+      description: Result ID
+      type: string
+    - contextPath: Vendor.Data.Name
+      description: Result name
+      type: string
 ```
 
 **Key points about the `script` section:**
 - `script.script` contains the full Python code as a `|-` literal block scalar
+- `register_module_line()` calls go as the first and last lines of the Python code
 - `script.type` is `python` (not `python3` — subtype handles the version)
 - `script.subtype` is `python3`
 - `script.dockerimage` must use a pinned version, not `:latest`
 - `script.commands` lists all available commands with their arguments and outputs
 - `script.isfetch: true` required if the integration fetches incidents
+- Every command starts with `supportedModules: []`
+- Every argument starts with `supportedModules: []`
 
 ### Command Definition Fields
 
 Each command in `script.commands`:
 
 ```yaml
-commands:
-  - name: vendor-action-name    # kebab-case, vendor-prefixed
+  commands:
+  - supportedModules: []
+    name: vendor-action-name    # kebab-case, vendor-prefixed
     description: What this command does
     polling: true               # Only for ScheduledCommand polling commands
     arguments:
-      - name: param_name
-        description: Parameter description
-        required: true          # Omit if optional
-        defaultValue: '50'      # String default; key is defaultValue
-        isArray: true           # Set true if accepts comma-separated list
-        predefined:             # Allowed values for dropdown
-          - option1
-          - option2
-        secret: true            # Mask this value in logs
+    - supportedModules: []
+      name: param_name
+      description: Parameter description
+      required: true          # Omit if optional
+      defaultValue: '50'      # String default; key is defaultValue
+      isArray: true           # Set true if accepts comma-separated list
+      predefined:             # Allowed values for dropdown
+      - option1
+      - option2
+      secret: true            # Mask this value in logs
     outputs:
-      - contextPath: Vendor.Object.Field
-        description: Field description
-        type: string            # string | number | boolean | date | unknown | array | object
+    - contextPath: Vendor.Object.Field
+      description: Field description
+      type: string            # string | number | boolean | date | unknown | array | object
 ```
 
 ---
@@ -204,113 +244,65 @@ commands:
 
 ### Select Parameter Examples
 
-**Single Select (Type 12):**
+**Single Select (Type 15):**
 
 ```yaml
-- display: Log Level
-  name: log_level
-  type: 12
-  required: false
-  defaultvalue: INFO
+- supportedModules: []
+  section: Connect
+  display: API Version
+  name: api_version
+  type: 15
+  required: true
+  defaultvalue: '2.1'
   options:
-    - DEBUG
-    - INFO
-    - WARNING
-    - ERROR
+  - '2.0'
+  - '2.1'
 ```
 
 **Multi Select (Type 14):**
 
 ```yaml
-- display: Event Types to Fetch
+- supportedModules: []
+  section: Collect
+  display: Event Types to Fetch
   name: event_types
   type: 14
   required: false
   options:
-    - authentication
-    - network
-    - endpoint
-    - cloud
+  - authentication
+  - network
+  - endpoint
+  - cloud
   additionalinfo: Select which event types to ingest. Leave empty for all.
 ```
 
 **Credentials (Type 9):**
 
 ```yaml
-- display: Credentials
+- supportedModules: []
+  section: Connect
+  display: ''
+  displaypassword: API Token
   name: credentials
   type: 9
   required: true
-  section: Connect
-  additionalinfo: Username and password. Supports credential vault references.
+  hiddenusername: true
+  additionalinfo: API token for authentication. Supports credential vault references.
 ```
 
 ---
 
-## sectionOrder and Tabbed Configuration UI
+## sectionorder and Tabbed Configuration UI
 
-Integrations with 4+ parameters should use `sectionOrder` to organize the configuration UI into tabs:
+Integrations with 4+ parameters should use `sectionorder` to organize the configuration UI into tabs:
 
 ```yaml
-sectionOrder:
-  - Connect
-  - Collect
+sectionorder:
+- Connect
+- Collect
 ```
 
 Each parameter references its section with `section:` and optionally `advanced: true` to collapse it under "Advanced":
-
-```yaml
-configuration:
-  - display: Server URL
-    name: server_url
-    type: 0
-    required: true
-    section: Connect
-    additionalinfo: Base URL of the API server
-
-  - display: API Key
-    name: api_key
-    type: 4
-    required: true
-    section: Connect
-
-  - display: Trust any certificate (not secure)
-    name: insecure
-    type: 8
-    required: false
-    defaultvalue: 'false'
-    section: Connect
-    advanced: true
-
-  - display: Use system proxy settings
-    name: proxy
-    type: 8
-    required: false
-    defaultvalue: 'false'
-    section: Connect
-    advanced: true
-
-  - display: Incident type
-    name: incident_type
-    type: 16
-    required: false
-    section: Collect
-
-  - display: Maximum incidents per fetch
-    name: max_fetch
-    type: 0
-    required: false
-    defaultvalue: '50'
-    section: Collect
-
-  - display: First fetch timestamp
-    name: first_fetch
-    type: 0
-    required: false
-    defaultvalue: 3 days
-    section: Collect
-    additionalinfo: "Date or relative time (e.g., '3 days', '2024-01-01T00:00:00Z')"
-```
 
 **Tab assignment rules:**
 - **Connect** — server URL, credentials, proxy, insecure, API version
@@ -348,12 +340,15 @@ For integrations consuming vault-managed credentials, use a type 9 parameter and
 
 ```yaml
 configuration:
-  - display: Credentials
-    name: credentials
-    type: 9
-    required: true
-    section: Connect
-    additionalinfo: Username and password. Supports credential vault references.
+- supportedModules: []
+  section: Connect
+  display: ''
+  displaypassword: API Token
+  name: credentials
+  type: 9
+  required: true
+  hiddenusername: true
+  additionalinfo: Username and password. Supports credential vault references.
 
 script:
   isFetchCredentials: true
@@ -375,84 +370,95 @@ These are CI/content-pack conventions only — real XSIAM tenant imports do not 
 
 ## Complete Integration Example
 
-A production-ready integration YAML with fetch-incidents, sectionOrder, and credential vault support:
+A production-ready integration YAML with fetch-incidents, sectionorder, and credential vault support:
 
 ```yaml
 commonfields:
   id: ExampleAPI
   version: -1
-
+vcShouldKeepItemLegacyProdMachine: false
 name: Example API
 display: Example API
 category: Utilities
 description: Integrates with the Example API to fetch alerts and query data.
-
-sectionOrder:
-  - Connect
-  - Collect
-
+sectionorder:
+- Connect
+- Collect
 configuration:
-  - display: API Server URL
-    name: server_url
-    type: 0
-    required: true
-    defaultvalue: https://api.example.com
-    additionalinfo: Base URL of the Example API server
-    section: Connect
+- supportedModules: []
+  section: Connect
+  display: API Server URL
+  name: server_url
+  type: 0
+  required: true
+  defaultvalue: https://api.example.com
+  additionalinfo: Base URL of the Example API server.
 
-  - display: Credentials
-    name: credentials
-    type: 9
-    required: true
-    section: Connect
-    additionalinfo: Username and API key. Supports credential vault references.
+- supportedModules: []
+  section: Connect
+  display: ''
+  displaypassword: API Key
+  name: credentials
+  type: 9
+  required: true
+  hiddenusername: true
+  additionalinfo: API key for authentication. Supports credential vault references.
 
-  - display: Trust any certificate (not secure)
-    name: insecure
-    type: 8
-    required: false
-    defaultvalue: 'false'
-    section: Connect
-    advanced: true
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Trust any certificate (not secure)
+  name: insecure
+  type: 8
+  required: false
+  defaultvalue: 'false'
 
-  - display: Use system proxy settings
-    name: proxy
-    type: 8
-    required: false
-    defaultvalue: 'false'
-    section: Connect
-    advanced: true
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Use system proxy settings
+  name: proxy
+  type: 8
+  required: false
+  defaultvalue: 'false'
 
-  - display: Fetch incidents
-    name: isFetch
-    type: 8
-    required: false
-    defaultvalue: 'true'
-    section: Collect
+- supportedModules: []
+  section: Collect
+  display: Fetch incidents
+  name: isFetch
+  type: 8
+  required: false
+  defaultvalue: 'true'
 
-  - display: Incident type
-    name: incident_type
-    type: 16
-    required: false
-    section: Collect
+- supportedModules: []
+  section: Collect
+  display: Incident type
+  name: incident_type
+  type: 16
+  required: false
 
-  - display: Maximum incidents per fetch
-    name: max_fetch
-    type: 0
-    required: false
-    defaultvalue: '50'
-    section: Collect
+- supportedModules: []
+  section: Collect
+  display: Maximum incidents per fetch
+  name: max_fetch
+  type: 0
+  required: false
+  defaultvalue: '50'
+  additionalinfo: Maximum number of incidents to fetch per cycle.
 
-  - display: First fetch timestamp
-    name: first_fetch
-    type: 0
-    required: false
-    defaultvalue: 3 days
-    section: Collect
-    additionalinfo: "Date or relative time (e.g., '3 days', '2024-01-01T00:00:00Z')"
+- supportedModules: []
+  section: Collect
+  display: First fetch timestamp
+  name: first_fetch
+  type: 0
+  required: false
+  defaultvalue: 3 days
+  additionalinfo: "Date or relative time (e.g., '3 days', '2024-01-01T00:00:00Z')."
 
 script:
   script: |-
+    register_module_line('ExampleAPI', 'start', __line__())
+
     from CommonServerPython import *
     from CommonServerUserPython import *
     import json
@@ -593,6 +599,8 @@ script:
 
     if __name__ in ('__main__', '__builtin__', 'builtins'):
         main()
+
+    register_module_line('ExampleAPI', 'end', __line__())
   type: python
   subtype: python3
   dockerimage: demisto/python3:3.12.12.6947692
@@ -601,28 +609,30 @@ script:
   isfetchevents: false
   isFetchCredentials: true
   runonce: false
-
   commands:
-    - name: example-get-data
-      description: Retrieves data from the Example API
-      arguments:
-        - name: query
-          description: Search query string
-          required: true
-        - name: limit
-          description: Maximum number of results to return
-          required: false
-          defaultValue: '50'
-      outputs:
-        - contextPath: Example.Data.ID
-          description: The unique ID of the result
-          type: string
-        - contextPath: Example.Data.Name
-          description: The name of the result
-          type: string
-        - contextPath: Example.Data.Status
-          description: The status of the result
-          type: string
+  - supportedModules: []
+    name: example-get-data
+    description: Retrieves data from the Example API
+    arguments:
+    - supportedModules: []
+      name: query
+      description: Search query string
+      required: true
+    - supportedModules: []
+      name: limit
+      description: Maximum number of results to return
+      required: false
+      defaultValue: '50'
+    outputs:
+    - contextPath: Example.Data.ID
+      description: The unique ID of the result
+      type: string
+    - contextPath: Example.Data.Name
+      description: The name of the result
+      type: string
+    - contextPath: Example.Data.Status
+      description: The status of the result
+      type: string
 ```
 
 ---

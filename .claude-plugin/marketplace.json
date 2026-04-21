@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Cortex XSIAM content development tools for Claude Code",
-    "version": "0.9.1"
+    "version": "0.10.0"
   },
   "plugins": [
     {

@@ -1,6 +1,6 @@
 # xsiam-buddy
 
-A Claude Code plugin for building [Cortex XSIAM](https://www.paloaltonetworks.com/cortex/cortex-xsiam) and XSOAR content — automation scripts, integrations, XQL queries, playbooks, and documentation — using natural language.
+A Claude Code plugin for building [Cortex XSIAM](https://www.paloaltonetworks.com/cortex/cortex-xsiam) and XSOAR content — automation scripts, integrations, event collectors, XQL queries, correlation rules, playbooks, and documentation — using natural language.
 
 ## Installation
 
@@ -12,21 +12,21 @@ claude plugin install xsiam-buddy@xsiam-buddy
 ## Skills
 
 ### `xsiam-scripts`
-Generate standalone Python automation scripts embedded in importable YAML files. Produces unified `.yml` files ready for direct import into XSIAM, with Python embedded in the `script: |-` field, proper field ordering, and `demisto.alert()` normalization for XSIAM context.
+Generate standalone Python automation scripts embedded in importable YAML files. Produces unified `.yml` files ready for direct import into XSIAM, with Python embedded in the `script: |-` field, proper field ordering, `register_module_line()` calls, and `demisto.alert()` normalization for XSIAM context.
 
 **Example triggers:** "create a script", "write an XSIAM script", "build an automation", "XSOAR script"
 
 ---
 
 ### `xsiam-integrations`
-Generate multi-command Python integrations with `BaseClient` and a corresponding YAML metadata file. Produces unified `.yml` files with Python embedded in `script.script: |-`, authentication configuration, and full command/argument definitions.
+Generate multi-command Python integrations with `BaseClient` and a corresponding YAML metadata file. Produces unified `.yml` files matching real XSIAM export format — `supportedModules` on all params/commands/arguments, `sectionorder` tabs, `register_module_line()` calls, `vcShouldKeepItemLegacyProdMachine`, and full command/argument definitions. Supports fetch-incidents with dedup/lookback, OAuth2 token caching, polling commands, credential vault, and indicator enrichment patterns.
 
 **Example triggers:** "build an integration", "create an integration for CrowdStrike", "write an XSIAM integration", "connect to an API"
 
 ---
 
 ### `xsiam-event-collectors`
-Generate event collector integrations that ingest vendor events directly into the XSIAM data lake via `send_events_to_xsiam()`. Produces unified `.yml` files with Python embedded in `script.script: |-`, `isfetchevents: true`, proper `_time` normalization, and deduplication handling. Unlike regular integrations that create incidents, event collector data lands in the data lake and is queryable via XQL.
+Generate event collector integrations that ingest vendor events directly into the XSIAM data lake via `send_events_to_xsiam()`. Produces unified `.yml` files matching real XSIAM export format with `isfetchevents: true`, `supportedModules` on all params/commands/arguments, `should_push_events` debug pattern, `_time` normalization (including epoch-to-ISO conversion), and multi-event-type support with separate vendor/product streams. Unlike regular integrations that create incidents, event collector data lands in the data lake and is queryable via XQL.
 
 **Example triggers:** "create an event collector", "build an event collector", "ingest events into XSIAM", "fetch events"
 
@@ -83,19 +83,31 @@ Each skill draws from reference files included in the plugin:
 | XQL advanced functions | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Array, JSON, and window functions (on-demand) |
 | XQL datasets extended | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Third-party, email, and CIE datasets (on-demand) |
 | XQL federated search | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | External S3/GCS/Azure querying (on-demand) |
-| Event collector spec | xsiam-event-collectors | `send_events_to_xsiam()`, `_time` handling, fetch-events flow |
+| Event collector spec | xsiam-event-collectors | YAML structure, `send_events_to_xsiam()`, `_time` handling, `should_push_events` pattern |
 | Correlation rule spec | xsiam-correlations | JSON export format, scheduling, severity, MITRE mapping |
 | Correlation examples | xsiam-correlations | Complete example correlation rule JSON files |
 | SPL-to-XQL mapping | xsiam-splunk-to-xql | SPL command and function translation reference |
 | Script YAML spec | xsiam-scripts | Required field ordering and complete examples |
 | Script types & patterns | xsiam-scripts | Specialized script types: enrichment, remediation, polling, etc. |
-| Integration YAML spec | xsiam-integrations | Integration structure, configuration, and command schema |
-| Integration patterns | xsiam-integrations | BaseClient, pagination, error handling patterns |
-| Common patterns | xsiam-scripts, xsiam-integrations | Shared Python patterns: CommandResults, indicators, logging |
+| Integration YAML spec | xsiam-integrations, xsiam-event-collectors | Integration structure, `supportedModules`, `sectionorder`, command schema |
+| Integration patterns | xsiam-integrations, xsiam-event-collectors | BaseClient, OAuth2, pagination, credential vault, error handling |
+| Common patterns | xsiam-scripts, xsiam-integrations, xsiam-event-collectors | Shared Python patterns: CommandResults, indicators, logging |
 | Playbook YAML schema | xsiam-playbooks | Task types, conditions, and sub-playbook references |
 | Playbook doc spec | xsiam-docs-playbooks | Section specs, YAML extraction, content guidelines |
 | Script doc spec | xsiam-docs-scripts | Section specs, Python analysis, type-specific docs |
 | HTML styling guide | xsiam-docs-playbooks, xsiam-docs-scripts | PAN brand palette, Google Docs-compatible HTML patterns |
+
+## YAML Format
+
+All Python-based skills generate **unified YAML** matching real XSIAM export format for direct tenant import. Key structural conventions:
+
+- `supportedModules: []` on every configuration parameter, command, and argument
+- `vcShouldKeepItemLegacyProdMachine: false` after `commonfields`
+- `sectionorder` (lowercase) with Connect/Collect tabs
+- `register_module_line()` as first and last lines of embedded Python
+- `demistomock` imports stripped from final output (platform provides `demisto` natively)
+- Content-pack CI fields (`fromversion`, `marketplaces`, `tests`) intentionally omitted
+- Docker image pinned to `3.12.x` (never `:latest`)
 
 ## Usage
 
@@ -153,6 +165,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.9.1 |
+| Version | 0.10.0 |
 | Author | joseph3325 |
 | Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |

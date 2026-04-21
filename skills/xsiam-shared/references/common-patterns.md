@@ -16,7 +16,7 @@ from CommonServerUserPython import *
 - **`CommonServerPython`**: Core utilities: `BaseClient`, `CommandResults`, `DemistoException`, `tableToMarkdown`, `return_results`, `return_error`, argument helpers, indicator types, etc. Also provides the `demisto` object at runtime.
 - **`CommonServerUserPython`**: Integration-specific additions (usually empty or auto-generated)
 
-> **Note:** Do not include `import demistomock as demisto` by default. The platform provides the `demisto` object at runtime. Only add the `demistomock` import if the user explicitly requests it (e.g., for local testing with `demisto-sdk` and `pytest`).
+> **Note:** The `demistomock` import (`import demistomock as demisto`) may be present during development/testing but **must be removed** from the final unified YAML. The platform provides the `demisto` object at runtime. Before delivering the YAML, scan the embedded Python and strip any `demistomock` import line.
 
 ---
 

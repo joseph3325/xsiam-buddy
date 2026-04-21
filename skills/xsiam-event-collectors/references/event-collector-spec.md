@@ -1,6 +1,6 @@
 # XSIAM Event Collector Specification
 
-Event-collector-specific YAML structure and Python patterns. For base integration YAML (commonfields, configuration, parameter types, sectionOrder), see `../../xsiam-integrations/references/integration-yaml-spec.md`. For BaseClient, auth, and pagination patterns, see `../../xsiam-integrations/references/integration-patterns.md`.
+Event-collector-specific YAML structure and Python patterns. For base integration YAML (commonfields, configuration, parameter types, sectionorder), see `../../xsiam-integrations/references/integration-yaml-spec.md`. For BaseClient, auth, and pagination patterns, see `../../xsiam-integrations/references/integration-patterns.md`.
 
 ---
 
@@ -18,57 +18,186 @@ Event-collector-specific YAML structure and Python patterns. For base integratio
 
 ---
 
-## YAML Differences
+## YAML Structure
 
-Only the fields that differ from a standard integration. The base YAML structure (commonfields, name, display, category, description, sectionOrder, configuration) is identical — refer to `integration-yaml-spec.md` for those.
+### Top-Level Field Order
+
+Event collector unified YAML follows this exact field order (matching real XSIAM exports):
+
+```yaml
+commonfields:
+  id: VendorNameEventCollector
+  version: -1
+vcShouldKeepItemLegacyProdMachine: false
+name: Vendor Name Event Collector
+display: Vendor Name Event Collector
+category: Analytics & SIEM
+description: Ingests events from Vendor Name into the XSIAM data lake.
+sectionorder:
+- Connect
+- Collect
+configuration:
+  # ... params ...
+script:
+  # ... code, flags, commands ...
+```
+
+**Key structural notes:**
+- `vcShouldKeepItemLegacyProdMachine: false` goes between `commonfields` and `name`
+- `sectionorder` uses lowercase 'o' (not camelCase `sectionOrder`)
+- `sectionorder` is a simple list of section names — each param declares its section via a `section:` field
 
 ### Script Section Flags
 
 ```yaml
 script:
+  script: |-
+    # Python code here
+  type: python
+  subtype: python3
+  dockerimage: demisto/python3:3.12.12.6947692
   isfetchevents: true
   isfetch: false
   isFetchSamples: false
+  runonce: false
+  commands:
+    # ... command definitions ...
 ```
 
 ### Required Commands
 
-Only the `<prefix>-get-events` debug command is listed in the `commands` array. `test-module` and `fetch-events` are implicit platform commands.
+Only the `<prefix>-get-events` debug command is listed in the `commands` array. `test-module` and `fetch-events` are implicit platform commands — they are NOT listed.
 
 ```yaml
   commands:
-    - name: vendorname-get-events
-      description: Manual command to fetch events for debugging. Does not update LastRun or push events to XSIAM.
-      arguments:
-        - name: limit
-          description: Maximum number of events to return
-          required: false
-          defaultValue: '100'
-        - name: start_time
-          description: Start time for event fetch (ISO 8601 or relative like '1 hour')
-          required: false
+  - supportedModules: []
+    name: vendorname-get-events
+    description: Manual command to fetch events for debugging. Does not update LastRun or push events to XSIAM.
+    arguments:
+    - supportedModules: []
+      name: should_push_events
+      description: If true, pushes fetched events to XSIAM. Use with caution — may create duplicates.
+      required: true
+      defaultValue: 'false'
+      predefined:
+      - 'true'
+      - 'false'
+    - supportedModules: []
+      name: limit
+      description: Maximum number of events to return.
+      required: false
+      defaultValue: '100'
+    - supportedModules: []
+      name: start_time
+      description: "Start time for event fetch (ISO 8601 or relative like '1 hour')."
+      required: false
 ```
 
-### Configuration Parameters (Collect Section)
+**`should_push_events` argument:** Production event collectors include this on the debug command. When `true`, events are pushed to XSIAM (useful for testing ingestion). When `false` (default), events are only displayed in the War Room. This follows the pattern used by official Palo Alto event collectors (Mimecast, CrowdStrike, etc.).
 
-Event collectors use `first_fetch` and `max_events` instead of `first_fetch` and `max_fetch`:
+### Configuration Parameters
+
+Every configuration parameter must include `supportedModules: []` as its first field and `section:` to assign it to a tab. Fields within each parameter follow this order: `supportedModules` → `section` → `advanced` (if true) → `display` → `displaypassword` (if type 9) → `name` → `type` → `required` → `defaultvalue` → `additionalinfo` → `options` (if select) → `hiddenusername` (if type 9).
+
+Event collectors use `first_fetch` and `max_events` (not `first_fetch` and `max_fetch` like incident-fetch integrations):
+
+#### Connect Section
 
 ```yaml
-  - display: First fetch time
-    name: first_fetch
-    type: 0
-    required: false
-    defaultvalue: 24 hours
-    section: Collect
-    additionalinfo: "How far back to fetch on first run (e.g., '24 hours', '3 days')"
+configuration:
+- supportedModules: []
+  section: Connect
+  display: Server URL
+  name: server_url
+  type: 0
+  required: true
+  defaultvalue: https://api.example.com
+  additionalinfo: Base URL of the vendor API.
 
-  - display: Maximum events per fetch
-    name: max_events
-    type: 0
-    required: false
-    defaultvalue: '1000'
-    section: Collect
+- supportedModules: []
+  section: Connect
+  display: API Key
+  name: api_key
+  type: 4
+  required: true
+  additionalinfo: API key for authentication.
+
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Trust any certificate (not secure)
+  name: insecure
+  type: 8
+  required: false
+  defaultvalue: 'false'
+
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Use system proxy settings
+  name: proxy
+  type: 8
+  required: false
+  defaultvalue: 'false'
 ```
+
+#### Collect Section
+
+```yaml
+- supportedModules: []
+  section: Collect
+  display: First fetch time
+  name: first_fetch
+  type: 0
+  required: false
+  defaultvalue: 24 hours
+  additionalinfo: "How far back to fetch on first run (e.g., '24 hours', '3 days')."
+
+- supportedModules: []
+  section: Collect
+  display: Maximum events per fetch
+  name: max_events
+  type: 0
+  required: false
+  defaultvalue: '1000'
+  additionalinfo: Maximum number of events to retrieve per fetch cycle.
+```
+
+#### Optional: Event Type Selection (Multi-Select)
+
+For collectors that ingest multiple event types:
+
+```yaml
+- supportedModules: []
+  section: Collect
+  display: Event types to fetch
+  name: event_types
+  type: 14
+  required: false
+  options:
+  - audit
+  - security
+  - network
+  additionalinfo: Select which event types to ingest. Leave empty for all types.
+```
+
+#### Optional: Credentials (Type 9)
+
+When the API uses username + password/token:
+
+```yaml
+- supportedModules: []
+  section: Connect
+  display: ''
+  displaypassword: API Token
+  name: credentials
+  type: 9
+  required: true
+  hiddenusername: true
+  additionalinfo: API token for authentication.
+```
+
+Access in code: `params.get('credentials', {}).get('password', '')`
 
 ---
 
@@ -78,12 +207,16 @@ The primary function for pushing events to the XSIAM data lake:
 
 ```python
 send_events_to_xsiam(
-    events,              # list[dict] or str (raw CEF/LEEF)
-    vendor,              # str — lowercase vendor name
-    product,             # str — lowercase product name
-    data_format=None,    # None (auto-detect for dicts), 'cef', 'leef'
-    chunk_size=XSIAM_EVENT_CHUNK_SIZE,  # Default 1 MiB
-    multiple_threads=False,             # Enable multi-threaded upload
+    events,                              # list[dict] or str (raw CEF/LEEF)
+    vendor,                              # str — lowercase vendor name
+    product,                             # str — lowercase product name
+    data_format=None,                    # None (auto-detect for dicts), 'cef', 'leef'
+    url_key='url',                       # param key for XSIAM URL override
+    num_of_attempts=3,                   # retry attempts on failure
+    chunk_size=XSIAM_EVENT_CHUNK_SIZE,   # Default 1 MiB
+    should_update_health_module=True,    # update integration health status
+    add_proxy_to_request=False,          # use proxy for API call
+    multiple_threads=False,              # enable multi-threaded upload
 )
 ```
 
@@ -91,20 +224,26 @@ send_events_to_xsiam(
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `events` | `list[dict]` or `str` | required | Events to send. Dicts auto-serialized as JSON. Raw strings sent as-is. |
+| `events` | `list[dict]` or `str` | required | Events to send. Dicts auto-serialized as JSON. Raw strings sent as-is (newline-delimited). |
 | `vendor` | `str` | required | Lowercase vendor name (e.g., `'okta'`) — used in dataset naming |
 | `product` | `str` | required | Lowercase product name (e.g., `'auth'`) — used in dataset naming |
 | `data_format` | `str` or `None` | `None` | Auto-detected for dicts. Use `'cef'` or `'leef'` for raw string events. |
+| `url_key` | `str` | `'url'` | Config param key for XSIAM URL override (rarely changed) |
+| `num_of_attempts` | `int` | `3` | Number of retry attempts on 429 or server errors |
 | `chunk_size` | `int` | 1 MiB | Events are split into chunks of this size before upload |
+| `should_update_health_module` | `bool` | `True` | Update the integration health module after sending. Set `False` when sending multiple batches, then update manually at the end. |
+| `add_proxy_to_request` | `bool` | `False` | Route the data ingestion API call through the configured proxy |
 | `multiple_threads` | `bool` | `False` | Enable multi-threaded upload for high-volume collectors |
 
 ### Behavior Notes
 
-**Chunking:** Events are automatically split into chunks (default 1 MiB, hard limit 9 MB per API call). For most collectors the default is fine.
+**Chunking:** Events are automatically split into chunks (default 1 MiB, hard limit 9 MB per API call). For most collectors the default is fine. Constants: `XSIAM_EVENT_CHUNK_SIZE` (1 MiB), `XSIAM_EVENT_CHUNK_SIZE_LIMIT` (9 MB).
 
-**Rate limiting:** The underlying API call retries on 429 automatically with exponential backoff.
+**Rate limiting:** The underlying API call retries on 429 automatically with exponential backoff up to `num_of_attempts`.
 
-**Multi-threading:** Only needed for very high-volume collectors. When enabled, call `demisto.updateModuleHealth('')` manually after completion to update the integration health status.
+**Multi-threading:** Only needed for very high-volume collectors. When enabled, set `should_update_health_module=False` and call `demisto.updateModuleHealth('')` manually after all threads complete.
+
+**Health module:** When `should_update_health_module=True` (default), the platform UI shows the number of events sent and the last successful fetch time. For batch sending, disable on intermediate calls and enable on the final call.
 
 ### Multiple Event Types
 
@@ -250,11 +389,12 @@ def fetch_events(client, params, last_run):
 
 ## `<prefix>-get-events` Debug Command Pattern
 
-This command is for manual debugging in the War Room. It fetches events and returns them as readable output — it does **NOT** send them to XSIAM.
+This command is for manual debugging in the War Room. It fetches events and returns them as readable output. The `should_push_events` argument optionally sends events to XSIAM (useful for testing the ingestion pipeline).
 
 ```python
 def get_events_command(client, args):
     """Manual command to fetch and display events (debugging only)."""
+    should_push_events = argToBoolean(args.get('should_push_events', 'false'))
     limit = arg_to_number(args.get('limit')) or 100
     start_time = args.get('start_time')
     if not start_time:
@@ -262,6 +402,13 @@ def get_events_command(client, args):
 
     events = client.get_events(since=start_time, limit=limit)
     events = normalize_events(events, time_field='created_at')
+
+    if should_push_events and events:
+        send_events_to_xsiam(
+            events=events,
+            vendor='vendorname',
+            product='productname',
+        )
 
     return CommandResults(
         readable_output=tableToMarkdown(
@@ -284,72 +431,85 @@ elif command == 'vendorname-get-events':
 
 ## Complete Event Collector Example
 
-A production-ready event collector YAML ready for XSIAM import:
+A production-ready event collector unified YAML matching real XSIAM export structure:
 
 ```yaml
 commonfields:
   id: ExampleEventCollector
   version: -1
-
+vcShouldKeepItemLegacyProdMachine: false
 name: Example Event Collector
 display: Example Event Collector
 category: Analytics & SIEM
 description: Ingests events from Example vendor into the XSIAM data lake.
-
-sectionOrder:
-  - Connect
-  - Collect
-
+sectionorder:
+- Connect
+- Collect
 configuration:
-  - display: Server URL
-    name: server_url
-    type: 0
-    required: true
-    defaultvalue: https://api.example.com
-    section: Connect
+- supportedModules: []
+  section: Connect
+  display: Server URL
+  name: server_url
+  type: 0
+  required: true
+  defaultvalue: https://api.example.com
+  additionalinfo: Base URL of the Example API.
 
-  - display: API Key
-    name: api_key
-    type: 4
-    required: true
-    section: Connect
+- supportedModules: []
+  section: Connect
+  display: API Key
+  name: api_key
+  type: 4
+  required: true
+  additionalinfo: API key for authentication.
 
-  - display: Trust any certificate (not secure)
-    name: insecure
-    type: 8
-    required: false
-    defaultvalue: 'false'
-    section: Connect
-    advanced: true
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Trust any certificate (not secure)
+  name: insecure
+  type: 8
+  required: false
+  defaultvalue: 'false'
 
-  - display: Use system proxy settings
-    name: proxy
-    type: 8
-    required: false
-    defaultvalue: 'false'
-    section: Connect
-    advanced: true
+- supportedModules: []
+  section: Connect
+  advanced: true
+  display: Use system proxy settings
+  name: proxy
+  type: 8
+  required: false
+  defaultvalue: 'false'
 
-  - display: First fetch time
-    name: first_fetch
-    type: 0
-    required: false
-    defaultvalue: 24 hours
-    section: Collect
-    additionalinfo: "How far back to fetch on first run (e.g., '24 hours', '3 days')"
+- supportedModules: []
+  section: Collect
+  display: First fetch time
+  name: first_fetch
+  type: 0
+  required: false
+  defaultvalue: 24 hours
+  additionalinfo: "How far back to fetch on first run (e.g., '24 hours', '3 days')."
 
-  - display: Maximum events per fetch
-    name: max_events
-    type: 0
-    required: false
-    defaultvalue: '1000'
-    section: Collect
+- supportedModules: []
+  section: Collect
+  display: Maximum events per fetch
+  name: max_events
+  type: 0
+  required: false
+  defaultvalue: '1000'
+  additionalinfo: Maximum number of events to retrieve per fetch cycle.
 
 script:
   script: |-
+    register_module_line('ExampleEventCollector', 'start', __line__())
+
     from CommonServerPython import *
     from CommonServerUserPython import *
     import dateparser
+
+
+    VENDOR = 'example'
+    PRODUCT = 'events'
 
 
     class ExampleClient(BaseClient):
@@ -400,8 +560,8 @@ script:
         if events:
             send_events_to_xsiam(
                 events=events,
-                vendor='example',
-                product='events',
+                vendor=VENDOR,
+                product=PRODUCT,
             )
             last_run['last_time'] = max(e['_time'] for e in events)
 
@@ -410,6 +570,7 @@ script:
 
     def get_events_command(client, args):
         """Manual command to fetch and display events (debugging only)."""
+        should_push_events = argToBoolean(args.get('should_push_events', 'false'))
         limit = arg_to_number(args.get('limit')) or 100
         start_time = args.get('start_time')
         if not start_time:
@@ -417,6 +578,13 @@ script:
 
         events = client.get_events(since=start_time, limit=limit)
         events = normalize_events(events, time_field='created_at')
+
+        if should_push_events and events:
+            send_events_to_xsiam(
+                events=events,
+                vendor=VENDOR,
+                product=PRODUCT,
+            )
 
         return CommandResults(
             readable_output=tableToMarkdown(
@@ -474,22 +642,35 @@ script:
 
     if __name__ in ('__main__', '__builtin__', 'builtins'):
         main()
+
+    register_module_line('ExampleEventCollector', 'end', __line__())
   type: python
   subtype: python3
   dockerimage: demisto/python3:3.12.12.6947692
   isfetchevents: true
   isfetch: false
+  isFetchSamples: false
   runonce: false
-
   commands:
-    - name: example-get-events
-      description: Manual command to fetch and display events for debugging. Does not push events to XSIAM.
-      arguments:
-        - name: limit
-          description: Maximum number of events to return
-          required: false
-          defaultValue: '100'
-        - name: start_time
-          description: Start time for event fetch (ISO 8601 or relative like '1 hour')
-          required: false
+  - supportedModules: []
+    name: example-get-events
+    description: Manual command to fetch and display events for debugging. Does not push events to XSIAM unless should_push_events is set to true.
+    arguments:
+    - supportedModules: []
+      name: should_push_events
+      description: If true, pushes fetched events to XSIAM. Use with caution — may create duplicates.
+      required: true
+      defaultValue: 'false'
+      predefined:
+      - 'true'
+      - 'false'
+    - supportedModules: []
+      name: limit
+      description: Maximum number of events to return.
+      required: false
+      defaultValue: '100'
+    - supportedModules: []
+      name: start_time
+      description: "Start time for event fetch (ISO 8601 or relative like '1 hour')."
+      required: false
 ```
