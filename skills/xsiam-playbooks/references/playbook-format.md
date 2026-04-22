@@ -815,3 +815,94 @@ filters:
 ```
 
 Outer array = AND, inner array = OR (same as conditions).
+
+---
+
+## 10. Common Playbook Patterns
+
+### 10.1 Enrichment → Triage → Remediation → Close
+
+Standard incident response flow:
+
+```
+"0" (start) → "1" (title: Enrichment) → "2" (command: enrich IP) → "3" (command: enrich domain)
+    → "4" (title: Triage) → "5" (condition: Is Malicious?)
+        → yes: "6" (command: block indicator) → "8" (command: close incident) → "9" (title: Done)
+        → #default#: "7" (command: close as benign) → "8" → "9"
+```
+
+Key points:
+- Title tasks separate phases visually
+- Condition task routes to remediation or benign closure
+- Both branches converge at the close task
+
+### 10.2 Parallel Enrichment
+
+Execute independent enrichment tasks concurrently, converge at a merge point:
+
+```
+"0" (start) → nexttasks: ["1", "2", "3"]
+    "1" (command: Get IP Reputation)    → "4"
+    "2" (command: Get Domain Info)      → "4"
+    "3" (command: Get File Hash Info)   → "4"
+"4" (regular: Consolidate Results) → "5" (condition: Decision)
+```
+
+Key points:
+- Start task's `nexttasks.'#none#'` lists multiple task IDs — XSIAM executes them in parallel
+- All parallel tasks point their `nexttasks` to the same merge task
+- Merge task waits for all predecessors to complete before executing
+
+### 10.3 Error Handling Branch
+
+Route errors to a dedicated handler without stopping the playbook:
+
+```
+"2" (command with continueonerror: true, continueonerrortype: errorPath)
+    → #none#: "3" (success path continues)
+    → #error#: "8" (error handler: log, notify, set context)
+          → "3" (rejoin main flow)
+```
+
+Key points:
+- Only the task with errors needs `continueonerror: true` and `continueonerrortype: errorPath`
+- Error handler task is positioned at `x: 730` (offset right of main column)
+- Error handler typically rejoins the main flow downstream
+
+### 10.4 Sub-Playbook with Loop
+
+Iterate a sub-playbook over a list of values:
+
+```
+"5" (playbook: Remediate Single Endpoint)
+    separatecontext: true
+    loop:
+      iscommand: false
+      exitCondition: "${Remediation.Status} == failed"
+      wait: 5
+      max: 20
+```
+
+Key points:
+- `separatecontext: true` is mandatory for sub-playbooks
+- `loop.max` prevents infinite iteration
+- `loop.exitCondition` can break early on failure
+- `loop.wait` is delay in seconds between iterations
+
+### 10.5 Conditional Integration Check
+
+Check if an integration is available before calling its commands:
+
+```
+"3" (condition: Is Fortinet Available?)
+    conditions: check ${IsIntegrationAvailable.Fortinet} == "true"
+    → "Yes": "4" (playbook: Block IP - Fortinet)
+    → #default#: "5" (playbook: Block IP - Generic)
+"4" → "6" (merge)
+"5" → "6" (merge)
+```
+
+Key points:
+- Use built-in `IsIntegrationAvailable` context to check integration status
+- Provide a generic fallback path via `#default#`
+- Both branches converge at a merge point
