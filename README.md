@@ -54,9 +54,9 @@ Translate existing Splunk SPL queries into equivalent XQL. Maps SPL commands, fu
 ---
 
 ### `xsiam-playbooks`
-Generate playbook YAML definitions (XSOAR-compatible) with companion Markdown documentation. Supports enrichment, triage, remediation, and utility patterns with proper task structure, condition branching, and sub-playbook references.
+Generate importable playbook YAML files matching real XSIAM export format. Produces unified `.yml` files with exact field ordering, all per-task boilerplate fields (`note`, `timertriggers`, `ignoreworker`, `skipunavailable`, `quietmode`, `isoversize`, `isautoswitchedtoquietmode`), real v4 UUIDs, `vcShouldKeepItemLegacyProdMachine`, view positioning, and `inputSections`/`outputSections`. Supports all task types: start, regular (command and script), condition (inline and script-based), title, sub-playbook, and collection.
 
-**Example triggers:** "create a playbook", "design a workflow", "incident response playbook"
+**Example triggers:** "create a playbook", "build a playbook", "incident response workflow", "XSIAM playbook"
 
 ---
 
@@ -92,7 +92,7 @@ Each skill draws from reference files included in the plugin:
 | Integration YAML spec | xsiam-integrations, xsiam-event-collectors | Integration structure, `supportedModules`, `sectionorder`, command schema |
 | Integration patterns | xsiam-integrations, xsiam-event-collectors | BaseClient, OAuth2, pagination, credential vault, error handling |
 | Common patterns | xsiam-scripts, xsiam-integrations, xsiam-event-collectors | Shared Python patterns: CommandResults, indicators, logging |
-| Playbook YAML schema | xsiam-playbooks | Task types, conditions, and sub-playbook references |
+| Playbook format spec | xsiam-playbooks | Complete YAML format: field ordering, task type examples, condition operators, argument patterns |
 | Playbook doc spec | xsiam-docs-playbooks | Section specs, YAML extraction, content guidelines |
 | Script doc spec | xsiam-docs-scripts | Section specs, Python analysis, type-specific docs |
 | HTML styling guide | xsiam-docs-playbooks, xsiam-docs-scripts | PAN brand palette, Google Docs-compatible HTML patterns |
@@ -165,6 +165,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.10.0 |
+| Version | 0.11.0 |
 | Author | joseph3325 |
 | Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |
