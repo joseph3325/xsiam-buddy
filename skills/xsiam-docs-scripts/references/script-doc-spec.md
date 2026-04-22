@@ -18,9 +18,7 @@ vcShouldKeepItemLegacyProdMachine: false
 name: ScriptName
 script: |-
   register_module_line('ScriptName', 'start', __line__())
-  from CommonServerPython import *
-  from CommonServerUserPython import *
-  # ... Python code ...
+  # ... Python code (platform auto-injects CommonServerPython at runtime) ...
   register_module_line('ScriptName', 'end', __line__())
 
 type: python

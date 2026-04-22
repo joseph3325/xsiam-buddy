@@ -99,7 +99,7 @@ Same BaseClient pattern as integrations, with these event-collector-specific dif
 - Every event must have a `_time` field in ISO 8601 format — map from the source timestamp field during fetch
 - `demisto.getLastRun()` / `demisto.setLastRun()` tracks last event timestamp per event type
 - For multiple event types, call `send_events_to_xsiam()` separately for each vendor/product pair
-- Standard imports: `CommonServerPython`, `CommonServerUserPython`, `dateparser`. The `demistomock` import (`import demistomock as demisto`) may be present during development/testing but **must be removed** from the final unified YAML — the platform provides the `demisto` object natively. Before delivering the YAML, scan the embedded Python and strip any `demistomock` import line.
+- **Do not include** `from CommonServerPython import *`, `from CommonServerUserPython import *`, or `import demistomock as demisto` — the platform injects these automatically at runtime. Unified YAML must not contain them. Third-party imports like `import dateparser` are fine.
 
 ### 4. File Output
 
@@ -134,7 +134,7 @@ Before delivering, verify:
 - [ ] `register_module_line()` present as first and last lines of Python code
 - [ ] Python code is embedded in `script.script: |-` (nested, not top-level)
 - [ ] Python indentation is consistent within the YAML block
-- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` import **removed** from final output
+- [ ] **No** `CommonServerPython`, `CommonServerUserPython`, or `demistomock` imports — the platform injects these at runtime
 - [ ] `main()` has `try/except` with `return_error()`
 - [ ] `BaseClient` subclass used for all HTTP calls via `_http_request()`
 - [ ] `test-module` command is implemented and routes correctly in `main()`

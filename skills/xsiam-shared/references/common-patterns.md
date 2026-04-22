@@ -4,19 +4,13 @@ Shared patterns used in both scripts and integrations.
 
 ---
 
-## Standard Imports
+## Platform-Injected Modules
 
-Every XSIAM/XSOAR automation starts with:
+The XSIAM platform automatically injects `CommonServerPython`, `CommonServerUserPython`, and the `demisto` object at runtime. **Do not include** `from CommonServerPython import *`, `from CommonServerUserPython import *`, or `import demistomock as demisto` in unified YAML output — the platform provides them.
 
-```python
-from CommonServerPython import *
-from CommonServerUserPython import *
-```
+**`CommonServerPython`** provides: `BaseClient`, `CommandResults`, `DemistoException`, `tableToMarkdown`, `return_results`, `return_error`, `argToList`, `argToBoolean`, `arg_to_number`, `arg_to_datetime`, `assign_params`, `DBotScore`, `Common.*` indicator types, `EntityRelationship`, `ScheduledCommand`, `handle_proxy`, and more.
 
-- **`CommonServerPython`**: Core utilities: `BaseClient`, `CommandResults`, `DemistoException`, `tableToMarkdown`, `return_results`, `return_error`, argument helpers, indicator types, etc. Also provides the `demisto` object at runtime.
-- **`CommonServerUserPython`**: Integration-specific additions (usually empty or auto-generated)
-
-> **Note:** The `demistomock` import (`import demistomock as demisto`) may be present during development/testing but **must be removed** from the final unified YAML. The platform provides the `demisto` object at runtime. Before delivering the YAML, scan the embedded Python and strip any `demistomock` import line.
+**`CommonServerUserPython`** provides: integration-specific additions (usually empty or auto-generated).
 
 ---
 
@@ -107,8 +101,6 @@ def validate_inputs(args: dict) -> None:
 **Never use `time.sleep()`** — the platform will kill long-running scripts. For operations that take time to complete (scans, exports, batch jobs), use the `ScheduledCommand` pattern. The script exits after each check and the platform re-invokes it at the specified interval.
 
 ```python
-from CommonServerPython import ScheduledCommand
-
 def check_scan_command(args):
     scan_id = args.get('scan_id')
 
@@ -256,7 +248,7 @@ demisto.createIncidents([{'name': 'Alert 1', 'occurred': '2024-01-01T00:00:00Z',
 
 ## Argument Parsing Utilities
 
-Use these `CommonServerPython` helpers — never raw `args.get()` + casting:
+Use these helpers (provided by the platform) — never raw `args.get()` + casting:
 
 ```python
 # argToList: "a,b,c" → ['a', 'b', 'c']; list passes through; None → []
@@ -274,7 +266,7 @@ if since:
     since_str = since.strftime('%Y-%m-%dT%H:%M:%SZ')
 ```
 
-### Additional CommonServerPython Helpers
+### Additional Platform Helpers
 
 **`assign_params()`** — build request parameter dicts, automatically stripping `None` values:
 
@@ -318,9 +310,6 @@ timeline = IndicatorsTimeline(
 For commands that enrich indicators (IP, domain, URL, file hash):
 
 ```python
-from CommonServerPython import DBotScore, Common, argToList
-
-
 def ip_command(client, args):
     """Enrich one or more IP addresses."""
     ips = argToList(args.get('ip'))
@@ -431,9 +420,6 @@ Common.CVE(id='CVE-2024-1234', cvss='9.8', published='2024-01-15', modified='202
 Use `EntityRelationship` to define relationships between indicators:
 
 ```python
-from CommonServerPython import EntityRelationship, FeedIndicatorType, DBotScore
-
-
 def build_relationships(domain: str, ip: str) -> list:
     return [
         EntityRelationship(

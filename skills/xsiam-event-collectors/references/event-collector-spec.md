@@ -503,8 +503,7 @@ script:
   script: |-
     register_module_line('ExampleEventCollector', 'start', __line__())
 
-    from CommonServerPython import *
-    from CommonServerUserPython import *
+
     import dateparser
 
 

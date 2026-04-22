@@ -29,8 +29,7 @@ name: NormalizeTimestamp
 script: |-
   register_module_line('NormalizeTimestamp', 'start', __line__())
 
-  from CommonServerPython import *
-  from CommonServerUserPython import *
+
   from datetime import datetime, timezone
 
 
@@ -120,8 +119,7 @@ name: IsIPInCIDR
 script: |-
   register_module_line('IsIPInCIDR', 'start', __line__())
 
-  from CommonServerPython import *
-  from CommonServerUserPython import *
+
   from ipaddress import ip_address, ip_network
 
 
@@ -211,8 +209,7 @@ name: DisplayDBotScores
 script: |-
   register_module_line('DisplayDBotScores', 'start', __line__())
 
-  from CommonServerPython import *
-  from CommonServerUserPython import *
+
 
 
   SCORE_LABELS = {0: 'Unknown', 1: 'Good', 2: 'Suspicious', 3: 'Malicious'}
@@ -328,8 +325,7 @@ name: ValidateResolutionReason
 script: |-
   register_module_line('ValidateResolutionReason', 'start', __line__())
 
-  from CommonServerPython import *
-  from CommonServerUserPython import *
+
 
 
   REQUIRES_COMMENT = {

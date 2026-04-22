@@ -76,7 +76,7 @@ Build a single `.yml` file following these ordered sub-steps:
 ### 3. Python Code Conventions
 
 The embedded Python follows XSOAR/XSIAM conventions:
-- Standard imports: `CommonServerPython`, `CommonServerUserPython`. The `demistomock` import (`import demistomock as demisto`) may be present during development/testing but **must be removed** from the final unified YAML — the platform provides the `demisto` object natively. Before delivering the YAML, scan the embedded Python and strip any `demistomock` import line.
+- **Do not include** `from CommonServerPython import *`, `from CommonServerUserPython import *`, or `import demistomock as demisto` — the platform injects these automatically at runtime. Unified YAML must not contain them.
 - `BaseClient` subclass with `_http_request()` for all API calls
 - Command routing in `main()`: `if command == 'test-module': ... elif command == 'vendor-action': ...`
 - Parse args with `argToList()`, `argToBoolean()`, `arg_to_number()`, `arg_to_datetime()` — never raw casting
@@ -100,7 +100,7 @@ Optionally also generate:
 Before delivering, verify:
 - [ ] Python code is embedded in `script.script: |-` (nested, not top-level)
 - [ ] Python indentation is consistent within the YAML block
-- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` import **removed** from final output
+- [ ] **No** `CommonServerPython`, `CommonServerUserPython`, or `demistomock` imports — the platform injects these at runtime
 - [ ] `main()` has `try/except` with `return_error()`
 - [ ] `BaseClient` subclass used for all HTTP calls via `_http_request()`
 - [ ] `test-module` command is implemented and routes correctly in `main()`

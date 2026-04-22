@@ -94,8 +94,7 @@ script:
   script: |-
     register_module_line('IntegrationName', 'start', __line__())
 
-    from CommonServerPython import *
-    from CommonServerUserPython import *
+
 
     class VendorClient(BaseClient):
         def __init__(self, base_url, api_key, verify=True, proxy=False):
@@ -459,8 +458,7 @@ script:
   script: |-
     register_module_line('ExampleAPI', 'start', __line__())
 
-    from CommonServerPython import *
-    from CommonServerUserPython import *
+
     import json
 
 

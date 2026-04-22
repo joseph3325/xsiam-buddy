@@ -17,9 +17,6 @@ vcShouldKeepItemLegacyProdMachine: false   # Required — always false
 
 name: script-name          # Script name (matches commonfields.id for new scripts)
 script: |-
-  from CommonServerPython import *
-  from CommonServerUserPython import *
-
   def main():
       try:
           args = demisto.args()
@@ -101,9 +98,6 @@ Every script must include `register_module_line()` calls as the **first and last
 ```python
 register_module_line('ScriptName', 'start', __line__())
 
-from CommonServerPython import *
-from CommonServerUserPython import *
-
 # ... all code ...
 
 if __name__ in ('__main__', '__builtin__', 'builtins'):
@@ -137,9 +131,6 @@ Scripts do not use a `BaseClient`. The `main()` function reads args directly:
 
 ```python
 register_module_line('ScriptName', 'start', __line__())
-
-from CommonServerPython import *
-from CommonServerUserPython import *
 
 
 def main():
@@ -221,8 +212,6 @@ name: FormatData
 script: |-
   register_module_line('FormatData', 'start', __line__())
 
-  from CommonServerPython import *
-  from CommonServerUserPython import *
   import json
 
 

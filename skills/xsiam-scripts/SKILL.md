@@ -85,8 +85,7 @@ Build a single `.yml` file. Field order must match real XSIAM export structure:
 The embedded Python follows XSOAR/XSIAM conventions:
 - First line: `register_module_line('ScriptName', 'start', __line__())` — use the exact script name
 - Last line: `register_module_line('ScriptName', 'end', __line__())` — use the exact script name
-- Standard imports come immediately after the opening `register_module_line`: `CommonServerPython`, `CommonServerUserPython`
-- The `demistomock` import (`import demistomock as demisto`) may be present during development/testing but **must be removed** from the final unified YAML — the platform provides the `demisto` object at runtime. Before delivering the YAML, scan the embedded Python and strip any `demistomock` import line.
+- **Do not include** `from CommonServerPython import *`, `from CommonServerUserPython import *`, or `import demistomock as demisto` — the platform injects these automatically at runtime. Unified YAML must not contain them.
 - Simple `main()` with `try/except` and `return_error()`
 - Parse args with `argToList()`, `argToBoolean()`, `arg_to_number()`, `arg_to_datetime()` — never raw casting
 - Return results with `CommandResults` and `return_results()`
@@ -111,7 +110,7 @@ Optionally also generate:
 Before delivering, verify:
 - [ ] Python code is embedded using `script: |-` (top-level string, not nested mapping)
 - [ ] Python indentation is consistent within the YAML block (2 spaces from key level)
-- [ ] Standard imports present (`CommonServerPython`, `CommonServerUserPython`) — `demistomock` import **removed** from final output
+- [ ] **No** `CommonServerPython`, `CommonServerUserPython`, or `demistomock` imports — the platform injects these at runtime
 - [ ] `main()` has `try/except` with `return_error()`
 - [ ] Field ordering matches spec: `commonfields → vcShouldKeepItemLegacyProdMachine → name → script → type → tags → comment → enabled → args → outputs → scripttarget → subtype → pswd → runonce → dockerimage → runas → engineinfo → mainengineinfo`
 - [ ] `vcShouldKeepItemLegacyProdMachine: false` is present at top level
@@ -136,4 +135,4 @@ Before delivering, verify:
 - Context prefix format: `Vendor.Object` (e.g., `FormattedData.Result`)
 - Docker image: pinned `3.12.x` (e.g., `demisto/python3:3.12.12.6947692`) — check your tenant for the latest available build
 - `demisto.alert()` for XSIAM alert context; `demisto.incident()` is the XSOAR equivalent
-- Use `execute_command()` (CommonServerPython alias) not `demisto.executeCommand()` directly
+- Use `execute_command()` (platform-provided alias) not `demisto.executeCommand()` directly

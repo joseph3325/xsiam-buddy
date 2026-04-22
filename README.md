@@ -105,7 +105,7 @@ All Python-based skills generate **unified YAML** matching real XSIAM export for
 - `vcShouldKeepItemLegacyProdMachine: false` after `commonfields`
 - `sectionorder` (lowercase) with Connect/Collect tabs
 - `register_module_line()` as first and last lines of embedded Python
-- `demistomock` imports stripped from final output (platform provides `demisto` natively)
+- No `CommonServerPython`, `CommonServerUserPython`, or `demistomock` imports — the platform injects these at runtime
 - Content-pack CI fields (`fromversion`, `marketplaces`, `tests`) intentionally omitted
 - Docker image pinned to `3.12.x` (never `:latest`)
 
@@ -165,6 +165,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.11.0 |
+| Version | 0.12.0 |
 | Author | joseph3325 |
 | Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |

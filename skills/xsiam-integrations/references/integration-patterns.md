@@ -9,9 +9,6 @@ Integration-specific Python patterns for connecting to external APIs in XSIAM/XS
 All integrations that make HTTP calls should extend `BaseClient`:
 
 ```python
-from CommonServerPython import BaseClient, DemistoException
-
-
 class VendorClient(BaseClient):
     """Client for interfacing with Vendor API."""
 
@@ -241,7 +238,7 @@ def main():
 
 ## Fetch Incidents Pattern
 
-For integrations that ingest alerts into XSIAM. Uses CommonServerPython helpers for deduplication and lookback windows to handle late-arriving incidents.
+For integrations that ingest alerts into XSIAM. Uses platform helpers for deduplication and lookback windows to handle late-arriving incidents.
 
 **YAML:** Set `isfetch: true` and `isFetchSamples: true` in the `script` section.
 
@@ -374,8 +371,6 @@ For long-running operations: submit a job, then schedule polling until it comple
 **YAML:** Set `polling: true` on the polling command definition.
 
 ```python
-from CommonServerPython import ScheduledCommand
-
 POLLING_INTERVAL_SECS = 30
 POLLING_TIMEOUT_SECS = 600
 
@@ -573,8 +568,6 @@ def main():
 When you need the explicit proxy URL (rare — usually for non-BaseClient HTTP calls):
 
 ```python
-from CommonServerPython import handle_proxy
-
 proxies = handle_proxy(proxy_param_name='proxy', checkbox_default_value=False)
 # Returns {'http': 'http://proxy:8080', 'https': 'http://proxy:8080'} or {}
 ```
