@@ -605,3 +605,213 @@ Pauses playbook execution to collect input from an analyst. Presents a message w
 | `'#error#'` | Error handling path | Tasks with `continueonerror: true` |
 | `"yes"` / `"no"` | Common condition labels | Condition tasks |
 | Custom labels | Any string matching a `conditions` label | Condition tasks |
+
+---
+
+## 7. Inputs, InputSections, Outputs, OutputSections
+
+### 7.1 Playbook Inputs
+
+Inputs allow callers to pass parameters to the playbook. Referenced in tasks as `${inputs.KeyName}`.
+
+```yaml
+inputs:
+- key: recipient
+  value:
+    simple: user@example.com
+  required: false
+  description: The email address to send errors to
+  playbookInputQuery: null
+```
+
+**Input fields:**
+
+| Field | Required | Description |
+|---|---|---|
+| `key` | Yes | Input parameter name (used as `${inputs.KeyName}` in tasks) |
+| `value` | Yes | Default value — `simple:` for literals, `complex:` for context paths |
+| `required` | Yes | `true` or `false` |
+| `description` | Yes | Human-readable description |
+| `playbookInputQuery` | Yes | Advanced query for filtering (usually `null`) |
+
+**Complex input value** — references context data:
+
+```yaml
+- key: IndicatorValue
+  value:
+    complex:
+      root: incident
+      accessor: indicator_value
+  required: true
+  description: The indicator to investigate
+  playbookInputQuery: null
+```
+
+### 7.2 InputSections
+
+Groups inputs for the UI. Always include even if inputs list is empty.
+
+```yaml
+inputSections:
+- inputs:
+  - recipient
+  - IndicatorValue
+  name: General (Inputs group)
+  description: Generic group for inputs
+```
+
+The `inputs` list under `inputSections` contains the `key` names from the `inputs` array. For playbooks with no inputs, use an empty list:
+
+```yaml
+inputSections:
+- inputs: []
+  name: General (Inputs group)
+  description: Generic group for inputs
+```
+
+### 7.3 Playbook Outputs
+
+Outputs expose results from the playbook to callers.
+
+```yaml
+outputs:
+- contextPath: Investigation.Verdict
+  description: Final verdict on the indicator
+  type: string
+- contextPath: Investigation.Score
+  description: Threat score (0-100)
+  type: number
+```
+
+**Output fields:**
+
+| Field | Required | Description |
+|---|---|---|
+| `contextPath` | Yes | Key where value is stored in context |
+| `description` | Yes | Description of the output value |
+| `type` | Yes | Data type: `string`, `number`, `array`, `object`, `unknown` |
+
+### 7.4 OutputSections
+
+Groups outputs for the UI. Always include even if outputs list is empty.
+
+```yaml
+outputSections:
+- outputs: []
+  name: General (Outputs group)
+  description: Generic group for outputs
+```
+
+When playbook has outputs, list the `contextPath` values:
+
+```yaml
+outputSections:
+- outputs:
+  - Investigation.Verdict
+  - Investigation.Score
+  name: General (Outputs group)
+  description: Generic group for outputs
+```
+
+---
+
+## 8. Condition Operators Reference
+
+| Operator | Description | Example Usage |
+|----------|-------------|---------------|
+| `isEqualString` | String equality | `${status}` == `"active"` |
+| `isNotEqualString` | String inequality | `${status}` != `"inactive"` |
+| `isExists` | Value exists (not null/empty) | `${result}` exists |
+| `isNotExists` | Value doesn't exist | `${error}` doesn't exist |
+| `containsGeneral` | String contains substring | `${message}` contains `"error"` |
+| `doesNotContainGeneral` | String doesn't contain | `${message}` doesn't contain `"success"` |
+| `greaterThan` | Numeric greater than | `${score}` > `80` |
+| `lessThan` | Numeric less than | `${count}` < `10` |
+| `greaterThanOrEqual` | Numeric >= | `${severity}` >= `3` |
+| `lessThanOrEqual` | Numeric <= | `${age_days}` <= `30` |
+| `startWith` | String starts with | `${url}` starts with `"https://"` |
+| `endWith` | String ends with | `${filename}` ends with `".exe"` |
+| `isInList` | Value in comma-separated list | `${status}` in `"active,pending"` |
+| `isNotInList` | Value not in list | `${priority}` not in `"low,medium"` |
+| `IsEmpty` | String is empty | `${optional_field}` is empty |
+| `IsNotEmpty` | String is not empty | `${required_field}` is not empty |
+| `matchRegex` | Regex pattern matching | `${email}` matches `"^[a-z]+@"` |
+| `isCaseSensitiveEqual` | Case-sensitive equality | `${id}` equals `"ABC123"` |
+
+---
+
+## 9. Script Argument Patterns
+
+### 9.1 Simple Arguments
+
+```yaml
+scriptarguments:
+  # Hardcoded value
+  timeout_seconds:
+    simple: "60"
+
+  # Context reference
+  endpoint_id:
+    simple: ${incident.endpointId}
+
+  # Playbook input reference
+  investigation_type:
+    simple: ${inputs.InvestigationType}
+```
+
+### 9.2 Complex Arguments (Filtered/Transformed)
+
+```yaml
+scriptarguments:
+  # Complex path with filter
+  file_hashes:
+    complex:
+      root: incident
+      accessor: associatedFiles
+      filters:
+      - - operator: isNotEmpty
+          left:
+            value:
+              simple: ${incident.associatedFiles}
+            iscontext: true
+
+  # Complex path with transformers
+  target_ips:
+    complex:
+      root: IndicatorData
+      accessor: value
+      transformers:
+      - operator: uniq
+      - operator: sort
+
+  # Complex path with concat transformer
+  issue_url:
+    complex:
+      root: ServerURL
+      accessor: URL
+      transformers:
+      - operator: concat
+        args:
+          prefix: {}
+          suffix:
+            value:
+              simple: /issue-view/${issue.id}
+```
+
+### 9.3 Filter Structure
+
+Filters inside complex arguments use the same operator syntax as condition tasks:
+
+```yaml
+filters:
+- - operator: isEqualString
+    left:
+      value:
+        simple: ${modules.brand}
+      iscontext: true
+    right:
+      value:
+        simple: SplunkPy
+```
+
+Outer array = AND, inner array = OR (same as conditions).
