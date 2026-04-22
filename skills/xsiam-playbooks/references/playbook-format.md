@@ -163,3 +163,445 @@ view: |-
 ```
 
 `height` = (max task y) - (min task y) + 60. `width` = (max task x) - (min task x) + 380. `x` and `y` = position of the top-left-most task.
+
+---
+
+## 5. Task Type Examples
+
+### 5.1 Start Task
+
+Every playbook has exactly one start task with ID `"0"`. The start task has an empty name and no script.
+
+```yaml
+"0":
+  id: "0"
+  taskid: 7c123a77-9e7e-412d-8292-c2a58536723c
+  type: start
+  task:
+    id: 7c123a77-9e7e-412d-8292-c2a58536723c
+    version: -1
+    name: ""
+    iscommand: false
+    brand: ""
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    '#none#':
+    - "1"
+  separatecontext: false
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 220
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+### 5.2 Regular Task — Integration Command
+
+Executes an integration command. Uses `script` field with `'Brand|||command-name'` format.
+
+```yaml
+"2":
+  id: "2"
+  taskid: 402b5c0f-1b77-4624-8622-69eaee26aaf1
+  type: regular
+  task:
+    id: 402b5c0f-1b77-4624-8622-69eaee26aaf1
+    version: -1
+    name: Call to the content bundle endpoint
+    description: Download files from Core server.
+    script: Core REST API|||core-api-download
+    type: regular
+    iscommand: true
+    brand: Core REST API
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    '#none#':
+    - "3"
+  scriptarguments:
+    retry-count:
+      simple: "2"
+    uri:
+      simple: /xsoar/content/bundle
+  separatecontext: false
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 540
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+### 5.3 Regular Task — Integration Command with Error Handling
+
+Same as 5.2 but with error branch enabled. Adds `continueonerror: true` and `continueonerrortype: errorPath`. The `nexttasks` includes `'#error#'` pointing to the error handler task.
+
+```yaml
+"2":
+  id: "2"
+  taskid: 402b5c0f-1b77-4624-8622-69eaee26aaf1
+  type: regular
+  task:
+    id: 402b5c0f-1b77-4624-8622-69eaee26aaf1
+    version: -1
+    name: Call to the content bundle endpoint
+    description: Download files from Core server.
+    script: Core REST API|||core-api-download
+    type: regular
+    iscommand: true
+    brand: Core REST API
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    '#error#':
+    - "8"
+    '#none#':
+    - "11"
+  scriptarguments:
+    retry-count:
+      simple: "2"
+    uri:
+      simple: /xsoar/content/bundle
+  separatecontext: false
+  continueonerror: true
+  continueonerrortype: errorPath
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 540
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+### 5.4 Regular Task — Automation Script
+
+Executes a built-in or custom automation script. Uses `scriptName` field (not `script`). Sets `iscommand: false`.
+
+```yaml
+"4":
+  id: "4"
+  taskid: 697554ee-fba4-4764-8253-fdda1260d45e
+  type: regular
+  task:
+    id: 697554ee-fba4-4764-8253-fdda1260d45e
+    version: -1
+    name: Get the server URL
+    description: Get the Server URL.
+    scriptName: GetServerURL
+    type: regular
+    iscommand: false
+    brand: ""
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    '#none#':
+    - "2"
+  separatecontext: false
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 360
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+### 5.5 Condition Task — Inline Conditions
+
+Branching logic using inline `conditions` array. Routes flow based on evaluated conditions. Must include `#default#` as fallback branch in `nexttasks`.
+
+```yaml
+"5":
+  id: "5"
+  taskid: 0a076dd9-b990-4ed0-86df-b8b93b731dee
+  type: condition
+  task:
+    id: 0a076dd9-b990-4ed0-86df-b8b93b731dee
+    version: -1
+    name: Is Splunk Enabled?
+    description: Check if Splunk instance is enabled.
+    type: condition
+    iscommand: false
+    brand: ""
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    '#default#':
+    - "7"
+    "Yes":
+    - "6"
+  conditions:
+  - label: "Yes"
+    condition:
+    - - operator: isEqualString
+        left:
+          value:
+            simple: ${modules.brand}
+          iscontext: true
+        right:
+          value:
+            simple: SplunkPy
+  separatecontext: false
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 700
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+**Condition structure explained:**
+- `conditions` is an array of labeled condition groups
+- Each group has a `label` (must match a key in `nexttasks`) and a `condition` array
+- `condition` is an array of arrays — outer array is AND logic, inner arrays are OR logic
+- Each condition entry has `operator`, `left` (value + `iscontext`), and `right` (value)
+
+### 5.6 Condition Task — Script-Based
+
+Uses a script to evaluate the condition instead of inline `conditions`. The script returns `yes`/`no` and nexttasks routes accordingly.
+
+```yaml
+"3":
+  id: "3"
+  taskid: 903caf3b-9015-4b10-80bd-de7ba4ed2c8d
+  type: condition
+  task:
+    id: 903caf3b-9015-4b10-80bd-de7ba4ed2c8d
+    version: -1
+    name: Does the IP have critical exposures?
+    description: Checks if one number is bigger than the other.
+    scriptName: IsGreaterThan
+    type: condition
+    iscommand: false
+    brand: ""
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    "no":
+    - "4"
+    "yes":
+    - "5"
+  scriptarguments:
+    first:
+      complex:
+        root: Expanse
+        accessor: IP.SeverityCounts.CRITICAL
+    second:
+      simple: "0"
+  separatecontext: false
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 530
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+### 5.7 Title Task
+
+Section header for visual organization. Non-functional — used to label phases of the playbook (e.g., "Enrichment Phase", "Done").
+
+```yaml
+"12":
+  id: "12"
+  taskid: 6e650c7e-2aaa-4169-8b2c-dc9c6e1977ad
+  type: title
+  task:
+    id: 6e650c7e-2aaa-4169-8b2c-dc9c6e1977ad
+    version: -1
+    name: Done
+    type: title
+    iscommand: false
+    brand: ""
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  separatecontext: false
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 1280
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+Title tasks are commonly used as terminal tasks (no `nexttasks`). They are also used as section headers between phases, in which case they have `nexttasks` pointing to the first task of the next phase.
+
+### 5.8 Playbook Task (Sub-Playbook)
+
+Calls another playbook. Must set `separatecontext: true` to prevent context pollution. Passes inputs via `scriptarguments`. Optionally configures `loop` for iteration.
+
+```yaml
+"6":
+  id: "6"
+  taskid: b3a1f9c2-47d8-4e6a-9c15-2d8e7f3a9b01
+  type: playbook
+  task:
+    id: b3a1f9c2-47d8-4e6a-9c15-2d8e7f3a9b01
+    version: -1
+    name: Block Indicators - Generic v3
+    playbookName: Block Indicators - Generic v3
+    description: Block malicious indicators across multiple platforms.
+    type: playbook
+    iscommand: false
+    brand: ""
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    '#none#':
+    - "7"
+  scriptarguments:
+    IP:
+      simple: ${incident.sourceIP}
+    Domain:
+      simple: ${incident.domain}
+  separatecontext: true
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 800
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+**Optional `loop` block** — for iterating over values:
+
+```yaml
+  loop:
+    iscommand: false
+    exitCondition: ""
+    wait: 1
+    max: 100
+```
+
+### 5.9 Collection Task (User Input)
+
+Pauses playbook execution to collect input from an analyst. Presents a message with options.
+
+```yaml
+"8":
+  id: "8"
+  taskid: d4e2a7b1-83f5-4c9d-a612-5f7c8e9d0b34
+  type: collection
+  task:
+    id: d4e2a7b1-83f5-4c9d-a612-5f7c8e9d0b34
+    version: -1
+    name: Collect Escalation Approval
+    description: Ask analyst for approval before escalating.
+    type: collection
+    iscommand: false
+    brand: ""
+    playbooktaskmissingcomponent: null
+    istaskmissingcomponenterrordismissed: false
+  nexttasks:
+    '#none#':
+    - "9"
+  scriptarguments:
+    message:
+      simple: |
+        Potential security breach detected.
+        Approve escalation to Security Operations Center?
+    options:
+    - Approve
+    - Deny
+    task_key_field: ApprovalDecision
+  separatecontext: false
+  continueonerrortype: ""
+  view: |-
+    {
+      "position": {
+        "x": 450,
+        "y": 1000
+      }
+    }
+  note: false
+  timertriggers: []
+  ignoreworker: false
+  skipunavailable: false
+  quietmode: 0
+  isoversize: false
+  isautoswitchedtoquietmode: false
+```
+
+---
+
+## 6. nexttasks Branch Labels
+
+| Label | Meaning | Used By |
+|---|---|---|
+| `'#none#'` | Default/only path forward | All task types |
+| `'#default#'` | Fallback when no condition matches | Condition tasks |
+| `'#error#'` | Error handling path | Tasks with `continueonerror: true` |
+| `"yes"` / `"no"` | Common condition labels | Condition tasks |
+| Custom labels | Any string matching a `conditions` label | Condition tasks |
