@@ -26,6 +26,8 @@ Every playbook YAML follows this exact top-level field order:
 
 **Never include:** `fromversion`, `tests`, `marketplaces`, `timeout` — these are content-pack CI fields only.
 
+**Optional trailing fields** (include when applicable): `dirtyInputs` (boolean, marks inputs as modified), `adopted` (boolean, marks playbook as adopted from marketplace).
+
 **Example top-level skeleton:**
 
 ```yaml
@@ -105,7 +107,7 @@ The `task` block inside each task follows this field order:
 | 5 | `description` | No | Task description text |
 | 6 | `script` | Cond. | Integration commands: `'Brand|||command-name'` |
 | 7 | `scriptName` | Cond. | Automation scripts: `ScriptName` |
-| 8 | `type` | Yes | Same value as outer `type` |
+| 8 | `type` | Yes* | Same value as outer `type` (*omit for start tasks) |
 | 9 | `iscommand` | Yes | `true` for integration commands, `false` otherwise |
 | 10 | `brand` | Yes | Integration brand name, or `""` |
 | 11 | `playbooktaskmissingcomponent` | Yes | Always `null` |
