@@ -1,9 +1,9 @@
 {
   "name": "xsiam-buddy",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Develop Cortex XSIAM content: automation scripts, XQL queries, correlation rules, playbooks, and documentation",
   "author": {
     "name": "Joe"
   },
-  "keywords": ["xsiam", "xsoar", "cortex", "xql", "correlation", "splunk", "playbook", "automation", "security"]
+  "keywords": ["xsiam", "xsoar", "cortex", "xql", "correlation", "splunk", "playbook", "automation", "security", "widget", "dashboard"]
 }

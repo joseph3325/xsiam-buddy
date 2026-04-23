@@ -1,6 +1,6 @@
 # xsiam-buddy
 
-A Claude Code plugin for building [Cortex XSIAM](https://www.paloaltonetworks.com/cortex/cortex-xsiam) and XSOAR content — automation scripts, integrations, event collectors, XQL queries, correlation rules, playbooks, and documentation — using natural language.
+A Claude Code plugin for building [Cortex XSIAM](https://www.paloaltonetworks.com/cortex/cortex-xsiam) and XSOAR content — automation scripts, integrations, event collectors, XQL queries, correlation rules, dashboard widgets, playbooks, and documentation — using natural language.
 
 ## Installation
 
@@ -60,6 +60,13 @@ Generate importable playbook YAML files matching real XSIAM export format. Produ
 
 ---
 
+### `xsiam-widgets`
+Generate XQL widget queries with `| view graph` visualization for Cortex XSIAM dashboards. Supports all 11 chart types (area, bubble, column, funnel, gauge, line, map, pie, scatter, single value, word cloud) with chart type selection guidance, aggregation patterns per visualization, and axis data-type validation. Shares the tiered XQL reference layer with `xsiam-xql`.
+
+**Example triggers:** "create a widget", "build a dashboard widget", "pie chart of events by vendor", "visualize network traffic", "view graph"
+
+---
+
 ### `xsiam-docs-playbooks`
 Generate professional HTML documentation for XSIAM/XSOAR playbooks. Produces Google Docs-ready HTML with visual flow diagrams, task inventories, decision logic tables, and integration dependency maps — all styled with the Palo Alto Networks brand palette.
 
@@ -78,15 +85,16 @@ Each skill draws from reference files included in the plugin:
 
 | Reference | Used By | Contents |
 |---|---|---|
-| XQL core reference | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Stages, operators, functions, and time syntax (always loaded) |
-| XQL datasets core | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Common dataset names, presets, and joins (always loaded) |
-| XQL advanced functions | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Array, JSON, and window functions (on-demand) |
-| XQL datasets extended | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | Third-party, email, and CIE datasets (on-demand) |
-| XQL federated search | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql | External S3/GCS/Azure querying (on-demand) |
+| XQL core reference | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql, xsiam-widgets | Stages, operators, functions, and time syntax (always loaded) |
+| XQL datasets core | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql, xsiam-widgets | Common dataset names, presets, and joins (always loaded) |
+| XQL advanced functions | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql, xsiam-widgets | Array, JSON, and window functions (on-demand) |
+| XQL datasets extended | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql, xsiam-widgets | Third-party, email, and CIE datasets (on-demand) |
+| XQL federated search | xsiam-xql, xsiam-correlations, xsiam-splunk-to-xql, xsiam-widgets | External S3/GCS/Azure querying (on-demand) |
 | Event collector spec | xsiam-event-collectors | YAML structure, `send_events_to_xsiam()`, `_time` handling, `should_push_events` pattern |
 | Correlation rule spec | xsiam-correlations | JSON export format, scheduling, severity, MITRE mapping |
 | Correlation examples | xsiam-correlations | Complete example correlation rule JSON files |
 | SPL-to-XQL mapping | xsiam-splunk-to-xql | SPL command and function translation reference |
+| Widget view graph spec | xsiam-widgets | Graph types, parameters, chart selection guide, aggregation patterns |
 | Script YAML spec | xsiam-scripts | Required field ordering and complete examples |
 | Script types & patterns | xsiam-scripts | Specialized script types: enrichment, remediation, polling, etc. |
 | Integration YAML spec | xsiam-integrations, xsiam-event-collectors | Integration structure, `supportedModules`, `sectionorder`, command schema |
@@ -132,6 +140,9 @@ Create a correlation rule to detect brute force attacks — more than 10 failed 
 Translate this Splunk query to XQL: index=main sourcetype=syslog | stats count by src_ip
 ```
 ```
+Create a dashboard widget showing event counts by vendor as a column chart
+```
+```
 Build a phishing response playbook that enriches URLs, checks reputation, and blocks malicious indicators
 ```
 ```
@@ -153,6 +164,7 @@ xsiam-buddy/
 │   ├── xsiam-correlations/     # Correlation rule JSON generation
 │   ├── xsiam-splunk-to-xql/    # SPL to XQL translation
 │   ├── xsiam-playbooks/        # Playbook generation
+│   ├── xsiam-widgets/           # Dashboard widget query generation
 │   ├── xsiam-docs-playbooks/   # Playbook documentation (HTML)
 │   ├── xsiam-docs-scripts/     # Script documentation (HTML)
 │   └── xsiam-shared/           # Shared XQL references and Python patterns
@@ -165,6 +177,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.12.0 |
+| Version | 0.13.0 |
 | Author | joseph3325 |
 | Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |
