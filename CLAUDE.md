@@ -29,6 +29,9 @@ skills/
   xsiam-xql/           # Standalone XQL query generation
     SKILL.md
     references/xql-examples.md
+  xsiam-widgets/      # Dashboard widget queries with | view graph
+    SKILL.md
+    references/widget-view-graph-spec.md
   xsiam-correlations/  # Correlation rule JSON files with embedded XQL
     SKILL.md
     references/correlation-rule-spec.md
@@ -89,6 +92,7 @@ Three skills share a common XQL reference layer under `xsiam-shared/references/`
 | xsiam-xql | Standalone queries (hunting, investigation, analytics) | XQL in code block with header comments |
 | xsiam-correlations | Detection rules (correlation rule engineering) | Complete `.json` with embedded XQL |
 | xsiam-splunk-to-xql | SPL translation (Splunk migration) | XQL in code block with "Translated from SPL" note |
+| xsiam-widgets | Dashboard widget visualization queries | XQL with `| view graph` in code block with header comments |
 
 ## Key XSIAM Conventions to Preserve
 
