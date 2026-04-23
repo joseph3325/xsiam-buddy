@@ -23,6 +23,7 @@
         "./skills/xsiam-playbooks",
         "./skills/xsiam-docs-playbooks",
         "./skills/xsiam-docs-scripts",
+        "./skills/xsiam-widgets",
         "./skills/xsiam-shared"
       ]
     }
