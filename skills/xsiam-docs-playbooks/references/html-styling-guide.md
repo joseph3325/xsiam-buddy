@@ -35,21 +35,19 @@ Task type node colors remain functional (not brand-colored) so they communicate 
     }
   </style>
 </head>
-<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1a2533; line-height: 1.6; margin: 0; padding: 0;">
-<table align="center" width="700" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
-  <tr>
-    <td style="padding: 20px;">
+<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 750px; margin: 0 auto; color: #1a2533; line-height: 1.6;">
 
-      <!-- all content here -->
+  <!-- content here -->
 
-    </td>
-  </tr>
-</table>
 </body>
 </html>
 ```
 
-The outer `<table align="center" width="700">` is what actually centers the document in Google Docs. Body styles are stripped on paste, but Google Docs honors the legacy `align` and `width` attributes on `<table>`. All inner content tables can keep `width: 100%` and they will fit inside the 700px container.
+The body has `max-width: 750px; margin: 0 auto` for browser rendering only — Google Docs strips body styles on paste and uses the document's own page margins to space content (which are symmetric by default).
+
+Do **not** wrap content in an outer container table with a fixed pixel width. Google Docs' table-layout algorithm interacts badly with deeply nested tables under a fixed-width ancestor: nested-table column widths collapse to near-zero, especially in argument tables and parallel-branch flow-diagram nodes. Let inner content tables (`width: 100%`) fill Google Docs' own page width, and use `align="center"` on individual flow-diagram task nodes to center those.
+
+Avoid `padding` on `<body>`. Google Docs has been observed to honor `padding-left` while ignoring `padding-right`, producing asymmetric margins after paste.
 
 ---
 
