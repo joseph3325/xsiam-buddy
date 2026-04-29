@@ -35,15 +35,21 @@ Task type node colors remain functional (not brand-colored) so they communicate 
     }
   </style>
 </head>
-<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 750px; margin: 0 auto; padding: 20px; color: #1a2533; line-height: 1.6;">
+<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1a2533; line-height: 1.6; margin: 0; padding: 0;">
+<table align="center" width="700" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+  <tr>
+    <td style="padding: 20px;">
 
-  <!-- content here -->
+      <!-- all content here -->
 
+    </td>
+  </tr>
+</table>
 </body>
 </html>
 ```
 
-Keep max-width at 750px so tables don't overflow in Google Docs.
+The outer `<table align="center" width="700">` is what actually centers the document in Google Docs. Body styles are stripped on paste, but Google Docs honors the legacy `align` and `width` attributes on `<table>`. All inner content tables can keep `width: 100%` and they will fit inside the 700px container.
 
 ---
 
