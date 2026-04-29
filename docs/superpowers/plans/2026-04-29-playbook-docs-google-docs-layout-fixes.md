@@ -1,10 +1,10 @@
 # Playbook Docs Google Docs Layout Fixes Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status:** Implemented and verified. Final version `0.3.4` committed at `9527315`. This plan has been retroactively updated to reflect the working solution (the original v0.3.2 plan described a wrapper-table approach that broke nested-table columns in Google Docs and was abandoned).
 
-**Goal:** Fix two Google Docs paste defects in the `xsiam-docs-playbooks` skill — center flow-diagram task nodes and restore symmetric page margins.
+**Goal:** Center flow-diagram task nodes in Google Docs and restore symmetric page margins after paste.
 
-**Architecture:** Reference-only edits to two files in one skill. Replace the body shell with a centered 700px wrapper table; add `align="center"` and `width` HTML attributes to every task-node table so Google Docs honors centering even after stripping CSS `margin: 0 auto`.
+**Architecture:** Reference-only edits to two files in one skill. Use a 3-column spacer wrapper (15% / 70% / 15%) around each single-task flow node so Google Docs renders it as a narrow centered box. Use a bare `<body>` with no padding so Google Docs' own page margins (which are symmetric) provide the document spacing.
 
 **Tech Stack:** Markdown reference files containing inline-styled HTML snippets. No runtime code, no test suite — validation is manual paste-into-Google-Docs.
 
@@ -16,308 +16,138 @@
 
 | File | Responsibility | Change Type |
 |---|---|---|
-| `skills/xsiam-docs-playbooks/references/html-styling-guide.md` | Canonical HTML/CSS templates the skill follows when emitting playbook docs | Modify (6 snippet replacements + 1 explanatory note) |
-| `skills/xsiam-docs-playbooks/SKILL.md` | Skill workflow + version metadata | Modify (version bump + one-line note in step 4) |
-
-No new files. No tests (the skill emits HTML; correctness is verified by rendering output and pasting into Google Docs).
+| `skills/xsiam-docs-playbooks/references/html-styling-guide.md` | Canonical HTML/CSS templates the skill follows when emitting playbook docs | Modify (Document Shell + Task Node + Parallel Branch Split + Condition Node templates) |
+| `skills/xsiam-docs-playbooks/SKILL.md` | Skill workflow + version metadata | Modify (version bump 0.3.1 → 0.3.4 + workflow-step-4 note) |
 
 ---
 
-### Task 1: Replace Document Shell with centered container table
+## Why these specific shapes (failure modes ruled out)
+
+Three patterns that look reasonable but break in Google Docs were tried and rejected during implementation. Documented here so future maintainers don't reintroduce them:
+
+1. **Wrapping content in `<table align="center" width="700">` to constrain document width.** Google Docs honors the `width` attribute, but the fixed-width ancestor causes nested-table columns to collapse to near-zero — argument-table headers like "Argument" wrap one letter per line, parallel-branch task boxes become slivers.
+2. **Adding `align="center" width="420"` to a task-node `<table>`.** Google Docs interprets `align="center"` on `<table>` as text-align for cell contents, not as table positioning. Result: full-width task box with text centered inside.
+3. **Putting `padding: 20px` on `<body>`.** Google Docs honors `padding-left` while ignoring `padding-right`, producing asymmetric document margins after paste.
+
+The 3-column spacer wrapper centers tasks because Google Docs honors percent column widths. The bare body produces symmetric margins because Google Docs falls back to its own page margins (which are symmetric by default).
+
+---
+
+### Task 1: Replace Document Shell with bare body
 
 **Files:**
-- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` (Document Shell section, around line 26–46)
+- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` (Document Shell section)
 
-- [ ] **Step 1: Replace the Document Shell snippet**
-
-In `skills/xsiam-docs-playbooks/references/html-styling-guide.md`, find the Document Shell code block:
+- [x] Find the Document Shell snippet and replace the `<body>` line with the bare-body version (no wrapper table, no body padding):
 
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Playbook: [Name]</title>
-  <style>
-    @media print {
-      .page-break { page-break-before: always; }
-    }
-  </style>
-</head>
-<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 750px; margin: 0 auto; padding: 20px; color: #1a2533; line-height: 1.6;">
+<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 750px; margin: 0 auto; color: #1a2533; line-height: 1.6;">
 
   <!-- content here -->
 
 </body>
-</html>
 ```
 
-Replace it with:
+- [x] Replace the trailing explanatory paragraph with text that documents the constraint: no fixed-width wrapper; no body padding; rely on Google Docs' own page margins for symmetry.
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Playbook: [Name]</title>
-  <style>
-    @media print {
-      .page-break { page-break-before: always; }
-    }
-  </style>
-</head>
-<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1a2533; line-height: 1.6; margin: 0; padding: 0;">
-<table align="center" width="700" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
-  <tr>
-    <td style="padding: 20px;">
-
-      <!-- all content here -->
-
-    </td>
-  </tr>
-</table>
-</body>
-</html>
-```
-
-- [ ] **Step 2: Replace the trailing explanatory line**
-
-Immediately after the snippet, find:
-
-```
-Keep max-width at 750px so tables don't overflow in Google Docs.
-```
-
-Replace with:
-
-```
-The outer `<table align="center" width="700">` is what actually centers the document in Google Docs. Body styles are stripped on paste, but Google Docs honors the legacy `align` and `width` attributes on `<table>`. All inner content tables can keep `width: 100%` and they will fit inside the 700px container.
-```
-
-- [ ] **Step 3: Verify the file still parses as Markdown**
-
-Run: `head -50 skills/xsiam-docs-playbooks/references/html-styling-guide.md`
-Expected: Document Shell heading visible, fenced code block intact, no broken backticks.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add skills/xsiam-docs-playbooks/references/html-styling-guide.md
-git commit -m "docs(playbook-docs): wrap body in centered 700px container table
-
-Google Docs strips body styles on paste, so max-width: 750px and
-margin: 0 auto are ignored — content tables stretch to the full page
-width on the right while a default first-line indent appears on the
-left. A wrapper table with align=\"center\" and width=\"700\" gives
-symmetric margins because Google Docs honors those legacy attributes."
-```
+- [x] Commit.
 
 ---
 
-### Task 2: Add align="center" + width to Regular/Command task node
+### Task 2: Apply 3-column spacer wrapper to Task Node template
 
 **Files:**
-- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` line 120
+- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` Task Node (Regular/Command) section
 
-- [ ] **Step 1: Update the Task Node (Regular/Command) snippet**
-
-Find the line (inside the "### Task Node (Regular/Command)" section):
+- [x] Replace the inner `<table>` snippet with the 3-column spacer pattern. The outer wrapper row's `<td>` no longer needs `text-align: center`. The middle 70% cell holds the existing 2-cell border + content table.
 
 ```html
-    <table style="margin: 0 auto; border-collapse: collapse; width: 420px;">
+<tr>
+  <td style="padding: 4px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="width: 15%;"></td>
+        <td style="width: 70%;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
+              <td style="padding: 10px 16px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
+                <span style="font-weight: bold; color: #1565C0; font-size: 14px;">Task 2: Enrich IP Address</span><br>
+                <span style="color: #7a8898; font-size: 12px;">ip — CrowdStrike</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td style="width: 15%;"></td>
+      </tr>
+    </table>
+  </td>
+</tr>
 ```
 
-Replace with:
-
-```html
-    <table align="center" width="420" style="margin: 0 auto; border-collapse: collapse;">
-```
-
-- [ ] **Step 2: Commit**
-
-```bash
-git add skills/xsiam-docs-playbooks/references/html-styling-guide.md
-git commit -m "docs(playbook-docs): center Regular/Command task node in Google Docs"
-```
+- [x] Commit.
 
 ---
 
-### Task 3: Add align="center" + width to Parallel Branch Split tables
+### Task 3: Strip `align="center"` and `width=` from Parallel Branch Split tables
 
 **Files:**
-- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` lines 176, 180, 192
+- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` Parallel Branch Split section
 
-- [ ] **Step 1: Update the outer parallel-split table (line 176)**
+Parallel branches naturally fill the wrapper width with a 50/50 split. The legacy `align="center"` and `width="100%"` attributes from v0.3.2 don't help (and now confuse readers) — drop them.
 
-Find (the first `<table>` inside the "### Parallel Branch Split" section, immediately after the `<td style="text-align: center; padding: 4px 0;">` opening):
-
-```html
-    <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
-```
-
-This pattern appears multiple times in the file. To target only this occurrence, locate it as the first occurrence inside the Parallel Branch Split section (it is followed within a few lines by a comment `<!-- Branch 1 -->`).
-
-Replace with:
+- [x] Replace the outer split table opening tag and both branch inner-table opening tags. Remove `align="center"` and `width="..."`. Remove `text-align: center` from the wrapper `<td>`.
 
 ```html
-    <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
+<tr>
+  <td style="padding: 4px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="width: 50%; vertical-align: top; padding: 0 8px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            ...
+          </table>
+        </td>
+        <td style="width: 50%; vertical-align: top; padding: 0 8px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            ...
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
 ```
 
-- [ ] **Step 2: Update Branch 1 inner table (line 180)**
-
-Inside the `<!-- Branch 1 -->` block, find:
-
-```html
-          <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
-```
-
-Replace with:
-
-```html
-          <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
-```
-
-- [ ] **Step 3: Update Branch 2 inner table (line 192)**
-
-Inside the `<!-- Branch 2 -->` block, find the same pattern:
-
-```html
-          <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
-```
-
-Replace with:
-
-```html
-          <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
-```
-
-- [ ] **Step 4: Verify all three replacements landed**
-
-Run:
-```bash
-grep -n 'align="center" width="100%"' skills/xsiam-docs-playbooks/references/html-styling-guide.md
-```
-Expected: at least three matching lines from the Parallel Branch Split section.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add skills/xsiam-docs-playbooks/references/html-styling-guide.md
-git commit -m "docs(playbook-docs): center parallel-branch split tables in Google Docs"
-```
+- [x] Commit.
 
 ---
 
-### Task 4: Add align="center" + width to Condition Node and its branch-arrows table
+### Task 4: Apply 3-column spacer wrapper to Condition Node
 
 **Files:**
-- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` lines 214 and 228
+- Modify: `skills/xsiam-docs-playbooks/references/html-styling-guide.md` Condition Node with Branch Labels section
 
-- [ ] **Step 1: Update the Condition Node table (line 214)**
+The condition node uses the same 3-column spacer pattern as Task 2. The branch-arrows row underneath keeps its 50/50 split for YES/NO label alignment but loses the `align="center"` and `width="100%"` attributes.
 
-Inside the "### Condition Node with Branch Labels" section, find the Condition node's inner table:
+- [x] Replace the condition node table with the 3-column spacer wrapper (border color `#FA582D`, background `#FFF3E0`, text `#c0392b`).
 
-```html
-    <table style="margin: 0 auto; border-collapse: collapse; width: 420px;">
-```
+- [x] Strip `align="center"` and `width="100%"` from the branch-arrows table. Remove `text-align: center` from the wrapper `<td>`.
 
-Replace with:
-
-```html
-    <table align="center" width="420" style="margin: 0 auto; border-collapse: collapse;">
-```
-
-- [ ] **Step 2: Update the Branch arrows table (line 228)**
-
-A few lines below, inside the `<!-- Branch arrows -->` block, find:
-
-```html
-    <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
-```
-
-This is the only remaining occurrence of this exact line in the file after Task 3. Replace with:
-
-```html
-    <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
-```
-
-- [ ] **Step 3: Verify no `margin: 0 auto; border-collapse: collapse; width:` lines remain**
-
-Run:
-```bash
-grep -n 'margin: 0 auto; border-collapse: collapse; width:' skills/xsiam-docs-playbooks/references/html-styling-guide.md
-```
-Expected: no output (zero matches).
-
-- [ ] **Step 4: Verify the new attribute pattern count**
-
-Run:
-```bash
-grep -c 'align="center" width=' skills/xsiam-docs-playbooks/references/html-styling-guide.md
-```
-Expected: `7` (one in Document Shell wrapper + six task-node tables).
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add skills/xsiam-docs-playbooks/references/html-styling-guide.md
-git commit -m "docs(playbook-docs): center condition node and branch arrows in Google Docs"
-```
+- [x] Commit.
 
 ---
 
-### Task 5: Update SKILL.md — version bump and wrapper note
+### Task 5: Update SKILL.md — version bump and step-4 note
 
 **Files:**
-- Modify: `skills/xsiam-docs-playbooks/SKILL.md` (front-matter line 13, plus workflow step 4)
+- Modify: `skills/xsiam-docs-playbooks/SKILL.md`
 
-- [ ] **Step 1: Bump the version**
+- [x] Bump `version: 0.3.1` → `version: 0.3.4`.
 
-Find the front-matter line:
+- [x] In workflow step 4, add a paragraph above the brand-palette intro that documents the three constraints: no fixed-width wrapper table; use the 3-column spacer pattern to center task nodes; no body `padding`.
 
-```yaml
-version: 0.3.1
-```
-
-Replace with:
-
-```yaml
-version: 0.3.2
-```
-
-- [ ] **Step 2: Add the wrapper-table note to step 4**
-
-In the "### 4. Apply HTML Styling" section, find the line:
-
-```
-All styling must use inline CSS and follow the **Palo Alto Networks brand palette** defined in `references/html-styling-guide.md`. The key brand colors are:
-```
-
-Insert a new paragraph immediately above it:
-
-```
-The document body is wrapped in a centered 700px container table (`<table align="center" width="700">`). This is required for Google Docs paste to render with symmetric left/right margins — the body's CSS centering is stripped on paste. All content tables go inside this wrapper. See the Document Shell pattern in `references/html-styling-guide.md`.
-
-```
-
-(Keep a blank line between the new paragraph and the existing "All styling must use inline CSS..." line.)
-
-- [ ] **Step 3: Verify the front-matter still parses**
-
-Run:
-```bash
-head -15 skills/xsiam-docs-playbooks/SKILL.md
-```
-Expected: `version: 0.3.2` visible, three `---` fences intact, no broken YAML.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add skills/xsiam-docs-playbooks/SKILL.md
-git commit -m "feat(playbook-docs): bump skill to 0.3.2 with Google Docs layout fixes
-
-Notes the new centered wrapper-table requirement in workflow step 4."
-```
+- [x] Commit.
 
 ---
 
@@ -325,57 +155,21 @@ Notes the new centered wrapper-table requirement in workflow step 4."
 
 This task is manual — there is no automated test for HTML paste fidelity into Google Docs.
 
-- [ ] **Step 1: Pick a representative playbook YAML**
-
-Choose a playbook that exercises sequential, parallel, and condition branches. If none is at hand, ask the user to point at one (or use any recent playbook the user has documented before).
-
-- [ ] **Step 2: Generate documentation using the updated skill**
-
-Invoke the `xsiam-docs-playbooks` skill on the chosen playbook YAML. Save the resulting `*_Documentation.html` to a temporary path.
-
-- [ ] **Step 3: Open the HTML in a browser**
-
-Verify visually:
-- Task nodes (start, command, condition, sub-playbook) appear centered inside the flow-diagram wrapper.
-- Document content sits centered on the page (700px column).
-- All other sections (Overview Card, Task Inventory, Decision Logic, Inputs/Outputs) render unchanged from the previous version.
-
-- [ ] **Step 4: Paste into Google Docs**
-
-Select All (Cmd+A), Copy (Cmd+C), paste into a fresh Google Doc. Verify:
-- Flow-diagram task nodes (e.g., "Task 0: Start", parallel children, condition nodes) are horizontally centered inside the gray wrapper — not flush against the left edge.
-- Document content has symmetric left and right margins inside the Google Doc page (no flush-right edge).
-- All other sections render with no regressions.
-
-- [ ] **Step 5: Report results**
-
-If validation passes, the work is done. If any issue surfaces, file a follow-up note describing exactly which template/snippet still misbehaves, then iterate on `html-styling-guide.md`.
+- [x] Generate documentation for a representative playbook (sequential + parallel branches). Test playbook used: `SC - Okta - Unapproved User Creation`.
+- [x] Open in a browser — verify task nodes are visibly narrower than the page and centered.
+- [x] Paste into a fresh Google Doc — verify single-task flow nodes are centered narrow boxes, parallel-branch nodes split 50/50 cleanly with no column-collapse, document has symmetric page margins, and argument tables render with normal column widths.
+- [x] User confirmed the v0.3.4 output is correct.
 
 ---
 
 ## Self-Review
 
 **Spec coverage:**
-- Spec Fix 1 "Centered container table" → Task 1.
-- Spec Fix 2 (a) Regular/Command node → Task 2.
-- Spec Fix 2 (b) Parallel Branch Split tables → Task 3.
-- Spec Fix 2 (c) Condition Node + branch-arrows table → Task 4.
-- Spec "SKILL.md changes" (version bump + step-4 note) → Task 5.
+- Spec Fix 1 (bare body shell, no padding) → Task 1.
+- Spec Fix 2 (3-column spacer for single tasks) → Task 2 (Task Node), Task 4 (Condition Node).
+- Parallel-branch attribute cleanup → Task 3.
+- SKILL.md version bump + step-4 note → Task 5.
 - Spec "Validation" → Task 6.
-All spec sections are covered.
+All spec sections covered.
 
-**Placeholder scan:** Every step has the exact target string and exact replacement string. No "TBD", "TODO", "appropriate error handling", or unresolved placeholders.
-
-**Type / pattern consistency:** Every task-node replacement uses the same attribute order: `align="center" width="<value>" style="margin: 0 auto; border-collapse: collapse;"`. Width values match the original (`420` for fixed-width nodes, `100%` for full-width split/branch tables). The wrapper table in Task 1 uses `width="700"` consistently with the spec.
-
----
-
-## Execution Handoff
-
-Plan complete and saved to `docs/superpowers/plans/2026-04-29-playbook-docs-google-docs-layout-fixes.md`. Two execution options:
-
-**1. Subagent-Driven (recommended)** — I dispatch a fresh subagent per task, review between tasks, fast iteration.
-
-**2. Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints.
-
-Which approach?
+**Iteration record:** v0.3.2 (wrapper table, broken) and v0.3.3 (reverted wrapper, still not centered) are documented in commit history (`4c651b2` … `d17baa5`). The final working state is v0.3.4 (`9527315`). Future maintainers can read the spec's "Iteration history" section to understand what was tried and why each prior attempt failed.
