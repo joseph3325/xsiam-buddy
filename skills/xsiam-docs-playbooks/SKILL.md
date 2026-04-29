@@ -10,7 +10,7 @@ description: >
   or when they describe a playbook and want a formatted reference document.
   This skill produces Google Docs-ready HTML with visual flow diagrams —
   not plain markdown.
-version: 0.3.1
+version: 0.3.2
 ---
 
 # XSIAM Playbook Documentation
@@ -88,6 +88,8 @@ The diagram should read top-to-bottom. For complex playbooks with many parallel 
 See `references/html-styling-guide.md` for the exact HTML patterns for flow diagram nodes, arrows, and branches.
 
 ### 4. Apply HTML Styling
+
+The document body is wrapped in a centered 700px container table (`<table align="center" width="700">`). This is required for Google Docs paste to render with symmetric left/right margins — the body's CSS centering is stripped on paste. All content tables go inside this wrapper. See the Document Shell pattern in `references/html-styling-guide.md`.
 
 All styling must use inline CSS and follow the **Palo Alto Networks brand palette** defined in `references/html-styling-guide.md`. The key brand colors are:
 - **Navy `#003366`** — playbook title, section headers, table headers
