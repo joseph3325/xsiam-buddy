@@ -45,7 +45,7 @@ Task type node colors remain functional (not brand-colored) so they communicate 
 
 The body has `max-width: 750px; margin: 0 auto` for browser rendering only — Google Docs strips body styles on paste and uses the document's own page margins to space content (which are symmetric by default).
 
-Do **not** wrap content in an outer container table with a fixed pixel width. Google Docs' table-layout algorithm interacts badly with deeply nested tables under a fixed-width ancestor: nested-table column widths collapse to near-zero, especially in argument tables and parallel-branch flow-diagram nodes. Let inner content tables (`width: 100%`) fill Google Docs' own page width, and use `align="center"` on individual flow-diagram task nodes to center those.
+Do **not** wrap content in an outer container table with a fixed pixel width. Google Docs' table-layout algorithm interacts badly with deeply nested tables under a fixed-width ancestor: nested-table column widths collapse to near-zero, especially in argument tables and parallel-branch flow-diagram nodes. Let inner content tables (`width: 100%`) fill Google Docs' own page width, and use the 3-column spacer wrapper pattern (see Task Node section below) to center individual flow-diagram task nodes.
 
 Avoid `padding` on `<body>`. Google Docs has been observed to honor `padding-left` while ignoring `padding-right`, producing asymmetric margins after paste.
 
@@ -118,16 +118,26 @@ The flow diagram uses a centered table layout. Each row is either a **task node*
 
 ### Task Node (Regular/Command)
 
+Task nodes are centered using a **3-column spacer wrapper**: empty cells on the left and right (each 15% wide) flank the task table in the middle (70% wide). This is the only reliable way to center a task table inside a Google Docs page — `align="center"` and `text-align: center` on a `<table>` do not center it (Google Docs treats `align="center"` as text alignment for cell contents, and tables don't honor `text-align`).
+
 ```html
 <tr>
-  <td style="text-align: center; padding: 4px 0;">
-    <table align="center" width="420" style="margin: 0 auto; border-collapse: collapse;">
+  <td style="padding: 4px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
       <tr>
-        <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
-        <td style="padding: 10px 16px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
-          <span style="font-weight: bold; color: #1565C0; font-size: 14px;">Task 2: Enrich IP Address</span><br>
-          <span style="color: #7a8898; font-size: 12px;">ip — CrowdStrike</span>
+        <td style="width: 15%;"></td>
+        <td style="width: 70%;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
+              <td style="padding: 10px 16px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
+                <span style="font-weight: bold; color: #1565C0; font-size: 14px;">Task 2: Enrich IP Address</span><br>
+                <span style="color: #7a8898; font-size: 12px;">ip — CrowdStrike</span>
+              </td>
+            </tr>
+          </table>
         </td>
+        <td style="width: 15%;"></td>
       </tr>
     </table>
   </td>
@@ -172,16 +182,16 @@ Note: Condition nodes use PAN Orange (`#FA582D`) for the left border — this ti
 
 ### Parallel Branch Split
 
-When tasks execute concurrently, use a multi-column layout:
+When tasks execute concurrently, use a multi-column layout. Parallel branches naturally fill the wrapper width (no spacer columns) — they share 50/50.
 
 ```html
 <tr>
-  <td style="text-align: center; padding: 4px 0;">
-    <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
+  <td style="padding: 4px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
       <tr>
         <!-- Branch 1 -->
         <td style="width: 50%; vertical-align: top; padding: 0 8px;">
-          <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
+          <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
               <td style="padding: 8px 12px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
@@ -193,7 +203,7 @@ When tasks execute concurrently, use a multi-column layout:
         </td>
         <!-- Branch 2 -->
         <td style="width: 50%; vertical-align: top; padding: 0 8px;">
-          <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
+          <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
               <td style="padding: 8px 12px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
@@ -212,24 +222,32 @@ When tasks execute concurrently, use a multi-column layout:
 ### Condition Node with Branch Labels
 
 ```html
-<!-- Condition node -->
+<!-- Condition node — uses the same 3-column spacer wrapper as a regular task node -->
 <tr>
-  <td style="text-align: center; padding: 4px 0;">
-    <table align="center" width="420" style="margin: 0 auto; border-collapse: collapse;">
+  <td style="padding: 4px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
       <tr>
-        <td style="width: 6px; background-color: #FA582D; border-radius: 4px 0 0 4px;"></td>
-        <td style="padding: 10px 16px; background-color: #FFF3E0; border: 1px solid #FFE0B2; border-left: none; border-radius: 0 4px 4px 0;">
-          <span style="font-weight: bold; color: #c0392b; font-size: 14px;">Is the file malicious?</span><br>
-          <span style="color: #7a8898; font-size: 12px;">Condition: Check verdict from enrichment</span>
+        <td style="width: 15%;"></td>
+        <td style="width: 70%;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 6px; background-color: #FA582D; border-radius: 4px 0 0 4px;"></td>
+              <td style="padding: 10px 16px; background-color: #FFF3E0; border: 1px solid #FFE0B2; border-left: none; border-radius: 0 4px 4px 0;">
+                <span style="font-weight: bold; color: #c0392b; font-size: 14px;">Is the file malicious?</span><br>
+                <span style="color: #7a8898; font-size: 12px;">Condition: Check verdict from enrichment</span>
+              </td>
+            </tr>
+          </table>
         </td>
+        <td style="width: 15%;"></td>
       </tr>
     </table>
   </td>
 </tr>
 <!-- Branch arrows -->
 <tr>
-  <td style="text-align: center; padding: 4px 0;">
-    <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
+  <td style="padding: 4px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
       <tr>
         <td style="width: 50%; text-align: center; padding: 4px;">
           <span style="display: inline-block; background-color: #C8E6C9; color: #2E7D32; padding: 2px 10px; border-radius: 3px; font-size: 11px; font-weight: bold;">YES</span><br>
