@@ -179,11 +179,11 @@ When tasks execute concurrently, use a multi-column layout:
 ```html
 <tr>
   <td style="text-align: center; padding: 4px 0;">
-    <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
+    <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
       <tr>
         <!-- Branch 1 -->
         <td style="width: 50%; vertical-align: top; padding: 0 8px;">
-          <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
+          <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
             <tr>
               <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
               <td style="padding: 8px 12px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
@@ -195,7 +195,7 @@ When tasks execute concurrently, use a multi-column layout:
         </td>
         <!-- Branch 2 -->
         <td style="width: 50%; vertical-align: top; padding: 0 8px;">
-          <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
+          <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
             <tr>
               <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
               <td style="padding: 8px 12px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
