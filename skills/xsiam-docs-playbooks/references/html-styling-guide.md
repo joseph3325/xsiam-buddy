@@ -217,7 +217,7 @@ When tasks execute concurrently, use a multi-column layout:
 <!-- Condition node -->
 <tr>
   <td style="text-align: center; padding: 4px 0;">
-    <table style="margin: 0 auto; border-collapse: collapse; width: 420px;">
+    <table align="center" width="420" style="margin: 0 auto; border-collapse: collapse;">
       <tr>
         <td style="width: 6px; background-color: #FA582D; border-radius: 4px 0 0 4px;"></td>
         <td style="padding: 10px 16px; background-color: #FFF3E0; border: 1px solid #FFE0B2; border-left: none; border-radius: 0 4px 4px 0;">
@@ -231,7 +231,7 @@ When tasks execute concurrently, use a multi-column layout:
 <!-- Branch arrows -->
 <tr>
   <td style="text-align: center; padding: 4px 0;">
-    <table style="margin: 0 auto; border-collapse: collapse; width: 100%;">
+    <table align="center" width="100%" style="margin: 0 auto; border-collapse: collapse;">
       <tr>
         <td style="width: 50%; text-align: center; padding: 4px;">
           <span style="display: inline-block; background-color: #C8E6C9; color: #2E7D32; padding: 2px 10px; border-radius: 3px; font-size: 11px; font-weight: bold;">YES</span><br>
