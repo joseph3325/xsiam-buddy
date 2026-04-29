@@ -123,7 +123,7 @@ The flow diagram uses a centered table layout. Each row is either a **task node*
 ```html
 <tr>
   <td style="text-align: center; padding: 4px 0;">
-    <table style="margin: 0 auto; border-collapse: collapse; width: 420px;">
+    <table align="center" width="420" style="margin: 0 auto; border-collapse: collapse;">
       <tr>
         <td style="width: 6px; background-color: #1976D2; border-radius: 4px 0 0 4px;"></td>
         <td style="padding: 10px 16px; background-color: #E3F2FD; border: 1px solid #BBDEFB; border-left: none; border-radius: 0 4px 4px 0;">
