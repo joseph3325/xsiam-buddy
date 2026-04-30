@@ -6,7 +6,6 @@ description: >
   "search XSIAM data", "hunt for", "investigate in XSIAM", or needs to
   build standalone XQL queries for threat hunting, investigation, analytics,
   or data enrichment.
-version: 1.0.0
 ---
 
 # XQL Query Generation

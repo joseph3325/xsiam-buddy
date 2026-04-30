@@ -5,7 +5,6 @@ description: >
   "build a playbook", "design a playbook", "XSIAM playbook", "XSOAR playbook",
   "incident response workflow", "automation workflow", "playbook YAML",
   or needs to generate playbook definitions for Cortex XSIAM or XSOAR.
-version: 1.0.0
 ---
 
 # XSIAM Playbook Development

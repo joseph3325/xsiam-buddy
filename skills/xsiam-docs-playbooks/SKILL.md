@@ -10,7 +10,6 @@ description: >
   or when they describe a playbook and want a formatted reference document.
   This skill produces Google Docs-ready HTML with visual flow diagrams —
   not plain markdown.
-version: 0.3.4
 ---
 
 # XSIAM Playbook Documentation

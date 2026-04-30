@@ -7,7 +7,6 @@ description: >
   "show me a chart of", "build a dashboard visualization", or needs to
   generate XQL widget queries with `| view graph` visualization for
   Cortex XSIAM dashboards.
-version: 1.0.0
 ---
 
 # Widget Query Generation

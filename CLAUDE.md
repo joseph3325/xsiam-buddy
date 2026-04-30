@@ -60,7 +60,7 @@ docs/plans/            # Design documents for significant changes
 ## How Skills Work
 
 Each `SKILL.md` follows this pattern:
-1. YAML front-matter with `name`, `description` (used for skill matching), `version`
+1. YAML front-matter with `name` and `description` (used for skill matching)
 2. A "Before Starting" section listing which reference files to read first
 3. A step-by-step workflow the model follows
 4. A validation checklist before delivering output

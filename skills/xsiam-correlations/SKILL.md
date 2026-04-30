@@ -5,7 +5,6 @@ description: >
   "build a detection rule", "write a detection", "XSIAM alert rule",
   "correlation JSON", "detection engineering", "build a detection for",
   or needs to generate correlation rule JSON files with embedded XQL detection logic.
-version: 2.0.0
 ---
 
 # Correlation Rule Generation

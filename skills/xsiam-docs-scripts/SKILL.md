@@ -10,7 +10,6 @@ description: >
   documentation, or when they describe a script and want a formatted
   reference document. This skill produces Google Docs-ready HTML with
   visual diagrams — not plain markdown.
-version: 0.1.0
 ---
 
 # XSIAM Script Documentation

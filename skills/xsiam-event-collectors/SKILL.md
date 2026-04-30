@@ -8,7 +8,6 @@ description: >
   XSIAM data lake. For standard API integrations that create incidents, use the
   xsiam-integrations skill instead. For standalone data-processing scripts, use
   xsiam-scripts.
-version: 1.1.0
 ---
 
 # XSIAM Event Collector Development

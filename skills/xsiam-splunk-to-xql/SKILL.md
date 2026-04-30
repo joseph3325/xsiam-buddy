@@ -5,7 +5,6 @@ description: >
   "convert Splunk to XQL", "Splunk to XQL", "SPL to XQL",
   "migrate Splunk query", "translate this Splunk query",
   or needs to convert existing Splunk SPL queries into equivalent XQL.
-version: 1.0.0
 ---
 
 # Splunk SPL to XQL Translation

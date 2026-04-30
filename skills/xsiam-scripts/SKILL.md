@@ -7,7 +7,6 @@ description: >
   develop a standalone Python script with its YAML metadata file for
   Cortex XSIAM or XSOAR. For connecting to external APIs with multiple
   commands, use the xsiam-integrations skill instead.
-version: 1.1.0
 ---
 
 # XSIAM Script Development
