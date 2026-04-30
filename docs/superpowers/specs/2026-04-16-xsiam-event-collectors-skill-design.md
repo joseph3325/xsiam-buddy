@@ -8,7 +8,7 @@
 
 ## Source Material
 
-RagVault files at `/Users/joeplunkett/Documents/RagVault/wiki/`:
+Knowledge vault files under `wiki/`:
 - `xsiam-developer-guide/event-collectors.md` — naming, YAML flags, required commands, _time field, sectionOrder
 - `xsiam-common-server-python/xsiam-data-ingestion.md` — send_events_to_xsiam(), send_data_to_xsiam(), chunking, threading, retry
 - `xsiam-developer-guide/integration-structure.md` — parameter types, sectionOrder, script flags

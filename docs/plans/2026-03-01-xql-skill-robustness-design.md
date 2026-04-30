@@ -5,7 +5,7 @@
 
 ## Problem
 
-Six new production XQL examples were added to `joseph3325/xsiam-dev/examples/xql`. Comparing these against the current skill revealed gaps in all three reference files:
+Six new production XQL examples were collected from a separate XQL examples repository. Comparing these against the current skill revealed gaps in all three reference files:
 
 - `xql-examples.md` — missing 6 examples
 - `xql-syntax-reference.md` — missing `array_any()`, `fields *` with raw aliasing, `incidr() = false`, chained joins, and incomplete correlation rule severity guidance

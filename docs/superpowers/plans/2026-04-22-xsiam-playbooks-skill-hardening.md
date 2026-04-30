@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-04-22-xsiam-playbooks-skill-hardening-design.md`
 
-**Ground truth source:** `jp-export-content-bundle.yml` at `/Users/joeplunkett/PycharmProjects/GitProjects/xsiam-public/Playbooks/jp-export-content-bundle.yml` — a real XSIAM export. Secondary: `/Users/joeplunkett/PycharmProjects/content/Packs/*/Playbooks/*.yml` (Cortex content repo).
+**Ground truth source:** `jp-export-content-bundle.yml` — a real XSIAM playbook export kept outside this repo. Secondary: `Packs/*/Playbooks/*.yml` from the public Cortex content repo (`palo-alto-networks/content`).
 
 ---
 
@@ -202,7 +202,7 @@ view: |-
 
 - [ ] **Step 2: Review the written content against the real export**
 
-Verify every field name and ordering against the real export at `/Users/joeplunkett/PycharmProjects/GitProjects/xsiam-public/Playbooks/jp-export-content-bundle.yml`. Confirm:
+Verify every field name and ordering against the real `jp-export-content-bundle.yml` export. Confirm:
 - Top-level field order matches lines 1-7, 402-432 of the export
 - Per-task field order matches any task block (e.g., lines 9-39 for task "0")
 - Inner task block field order matches (e.g., lines 14-21 for task "0")
@@ -1216,7 +1216,7 @@ git commit -m "feat(playbooks): rewrite SKILL.md with hardened 5-step workflow a
 **Files:**
 - Read: `skills/xsiam-playbooks/SKILL.md`
 - Read: `skills/xsiam-playbooks/references/playbook-format.md`
-- Read: `/Users/joeplunkett/PycharmProjects/GitProjects/xsiam-public/Playbooks/jp-export-content-bundle.yml`
+- Read: `jp-export-content-bundle.yml` (reference XSIAM playbook export, kept outside this repo)
 
 - [ ] **Step 1: Cross-reference the format spec against the real export**
 

@@ -164,12 +164,13 @@ xsiam-buddy/
 │   ├── xsiam-correlations/     # Correlation rule JSON generation
 │   ├── xsiam-splunk-to-xql/    # SPL to XQL translation
 │   ├── xsiam-playbooks/        # Playbook generation
-│   ├── xsiam-widgets/           # Dashboard widget query generation
+│   ├── xsiam-widgets/          # Dashboard widget query generation
 │   ├── xsiam-docs-playbooks/   # Playbook documentation (HTML)
 │   ├── xsiam-docs-scripts/     # Script documentation (HTML)
 │   └── xsiam-shared/           # Shared XQL references and Python patterns
 └── docs/
-    └── plans/                  # Design documents
+    ├── plans/                  # Design documents
+    └── superpowers/            # Implementation plans and specs (tracked history)
 ```
 
 ## Plugin Metadata
@@ -177,6 +178,6 @@ xsiam-buddy/
 | Field | Value |
 |---|---|
 | Name | xsiam-buddy |
-| Version | 0.13.0 |
+| Version | 0.13.1 |
 | Author | joseph3325 |
-| Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security |
+| Keywords | xsiam, xsoar, cortex, xql, correlation, splunk, playbook, automation, security, widget, dashboard |

@@ -8,7 +8,7 @@
 
 ## Source Material
 
-New content from the RagVault at `/Users/joeplunkett/Documents/RagVault/wiki/xsiam-developer-guide/` and `/Users/joeplunkett/Documents/RagVault/wiki/xsiam-common-server-python/`. Key source files:
+New content from the knowledge vault under `wiki/xsiam-developer-guide/` and `wiki/xsiam-common-server-python/`. Key source files:
 
 - `integration-structure.md` — parameter types 0-16, sectionOrder, script flags
 - `demisto-class-api.md` — complete demisto object API

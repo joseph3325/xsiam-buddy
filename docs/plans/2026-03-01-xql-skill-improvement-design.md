@@ -81,7 +81,7 @@ Sections added to `xql-syntax-reference.md`:
 
 ## Examples File
 
-`xql-examples.md` contains 6 real queries sourced from `joseph3325/xsiam-dev/examples/xql`:
+`xql-examples.md` contains 6 real queries sourced from a separate XQL examples repository:
 
 - Google Workspace Administrator Role Assigned
 - Multiple Users Failing to Login from the Same Location

@@ -18,7 +18,7 @@ The xsiam-playbooks skill (v0.1.0) has not been tested and its reference file do
 
 ## Ground Truth
 
-The canonical format reference is `jp-export-content-bundle.yml` — a real XSIAM export with 7 tasks covering start, regular (command), regular (script), title, and error-handling patterns. Secondary validation from the Cortex content repo (`/Users/joeplunkett/PycharmProjects/content/Packs/*/Playbooks/`).
+The canonical format reference is `jp-export-content-bundle.yml` — a real XSIAM export with 7 tasks covering start, regular (command), regular (script), title, and error-handling patterns. Secondary validation from the public Cortex content repo (`Packs/*/Playbooks/` in `palo-alto-networks/content`).
 
 ## Approach
 

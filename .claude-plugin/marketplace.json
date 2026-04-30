@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Cortex XSIAM content development tools for Claude Code",
-    "version": "0.13.0"
+    "version": "0.13.1"
   },
   "plugins": [
     {
@@ -23,8 +23,7 @@
         "./skills/xsiam-playbooks",
         "./skills/xsiam-docs-playbooks",
         "./skills/xsiam-docs-scripts",
-        "./skills/xsiam-widgets",
-        "./skills/xsiam-shared"
+        "./skills/xsiam-widgets"
       ]
     }
   ]

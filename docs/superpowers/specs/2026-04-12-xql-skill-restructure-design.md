@@ -276,7 +276,7 @@ No breaking changes. Old `xsiam-xql` trigger phrases still work. Correlation rul
 
 ## Knowledge Source
 
-All new content sourced from the Obsidian RagVault at `/Users/joeplunkett/Documents/RagVault/`, cross-referenced with existing skill content. Key RagVault directories:
+All new content sourced from the Obsidian XSIAM knowledge vault, cross-referenced with existing skill content. Key vault directories:
 - `xsiam-xql-language/` — 23 stages, 96 functions, operator reference
 - `xsiam-build-xql-queries/` — Query Builder UI, XDM syntax, Splunk translation, federated search
 - `xsiam-xql-query/` — XQL Query API (not included in skills per user decision)

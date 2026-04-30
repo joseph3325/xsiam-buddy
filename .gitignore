@@ -216,3 +216,9 @@ CLAUDE.md
 # Design docs (*-design.md) are kept
 docs/plans/*
 !docs/plans/*-design.md
+
+# Skill evaluation workspaces (eval sets, iteration outputs, grading, timing)
+skills/*-workspace/
+
+# Local-only Claude Code instructions (contributor-specific paths, etc.)
+CLAUDE.local.md

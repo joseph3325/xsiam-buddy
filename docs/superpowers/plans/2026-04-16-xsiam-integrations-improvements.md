@@ -4,7 +4,7 @@
 
 **Goal:** Deepen the xsiam-integrations skill with production-grade patterns from the RagVault — fetch-incident dedup/lookback, @polling_function, rate limiting, credential vault, sectionOrder, complete parameter types, and expanded indicator enrichment.
 
-**Architecture:** Expand four existing Markdown reference files in-place. No new files. Content sourced from the RagVault at `/Users/joeplunkett/Documents/RagVault/wiki/`. Each task modifies exactly one file and can be committed independently.
+**Architecture:** Expand four existing Markdown reference files in-place. No new files. Content sourced from the knowledge vault under `wiki/`. Each task modifies exactly one file and can be committed independently.
 
 **Tech Stack:** Markdown with embedded YAML and Python code blocks.
 

@@ -5,7 +5,7 @@
 
 ## Problem
 
-The xsiam-scripts skill has gaps that reduce its effectiveness for specialized script types and common patterns. A review against the XSIAM knowledge vault (`/Users/joeplunkett/Documents/RagVault/`) identified 8 gaps spanning script type guidance, examples, API coverage, and anti-patterns.
+The xsiam-scripts skill has gaps that reduce its effectiveness for specialized script types and common patterns. A review against the XSIAM knowledge vault identified 8 gaps spanning script type guidance, examples, API coverage, and anti-patterns.
 
 ## Approach
 

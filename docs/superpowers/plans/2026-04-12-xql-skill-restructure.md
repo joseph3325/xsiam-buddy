@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown (skills + references), YAML (correlation templates), JSON (plugin manifests). No runtime code.
 
-**Knowledge Source:** Obsidian RagVault at `/Users/joeplunkett/Documents/RagVault/`. Key directories:
+**Knowledge Source:** Obsidian XSIAM knowledge vault (referenced below as `vault://`). Key directories:
 - `xsiam-xql-language/xql-stages-reference.md` — 23 stages catalog
 - `xsiam-xql-language/xql-functions-reference.md` — 96 functions catalog
 - `xsiam-xql-language/xql-getting-started.md` — Operators, data selection, string handling
@@ -39,9 +39,9 @@ This is the foundational file — all three skills depend on it. It combines con
 
 Read these files to gather all content:
 - Existing: `skills/xsiam-xql/references/xql-syntax-reference.md` (current syntax — 971 lines covering 13 stages, ~55 functions, operators, patterns)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-xql-language/xql-stages-reference.md` (23 stages with syntax/examples)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-xql-language/xql-functions-reference.md` (96 functions in 9 categories)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-xql-language/xql-getting-started.md` (operators, data selection, string handling, ENUM types)
+- RagVault: `vault://xsiam-xql-language/xql-stages-reference.md` (23 stages with syntax/examples)
+- RagVault: `vault://xsiam-xql-language/xql-functions-reference.md` (96 functions in 9 categories)
+- RagVault: `vault://xsiam-xql-language/xql-getting-started.md` (operators, data selection, string handling, ENUM types)
 
 - [ ] **Step 2: Write `xql-core-reference.md`**
 
@@ -171,8 +171,8 @@ reference shared by xsiam-xql, xsiam-correlations, and xsiam-splunk-to-xql."
 
 Read these files:
 - Existing: `skills/xsiam-xql/references/xql-datasets.md` (current dataset catalog — 1015 lines)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-xql-language/xql-getting-started.md` (preset definitions, default dataset info)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-build-xql-queries/xql-query-builder.md` (XDM dataset mappings, hot/cold storage, default limits)
+- RagVault: `vault://xsiam-xql-language/xql-getting-started.md` (preset definitions, default dataset info)
+- RagVault: `vault://xsiam-build-xql-queries/xql-query-builder.md` (XDM dataset mappings, hot/cold storage, default limits)
 
 - [ ] **Step 2: Write `xql-datasets-core.md`**
 
@@ -262,7 +262,7 @@ and user name format from RagVault."
 
 Read these files:
 - Existing: `skills/xsiam-xql/references/xql-syntax-reference.md` (advanced array functions section, arrow notation edge cases)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-xql-language/xql-functions-reference.md` (array, JSON, window, IP, URL function tables)
+- RagVault: `vault://xsiam-xql-language/xql-functions-reference.md` (array, JSON, window, IP, URL function tables)
 
 - [ ] **Step 2: Write `xql-advanced-functions.md`**
 
@@ -343,8 +343,8 @@ need these features."
 
 Read these files:
 - Existing: `skills/xsiam-xql/references/xql-datasets.md` (third-party alert datasets, email datasets, pan_dss_raw sections)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-build-xql-queries/xql-query-builder.md` (cold storage details)
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-content-examples/` (xdr_http_collector patterns)
+- RagVault: `vault://xsiam-build-xql-queries/xql-query-builder.md` (cold storage details)
+- RagVault: `vault://xsiam-content-examples/` (xdr_http_collector patterns)
 
 - [ ] **Step 2: Write `xql-datasets-extended.md`**
 
@@ -405,7 +405,7 @@ xdr_http_collector, and cold storage querying. Loaded on-demand for uncommon dat
 
 - [ ] **Step 1: Read source material**
 
-Read: RagVault `/Users/joeplunkett/Documents/RagVault/xsiam-build-xql-queries/federated-search.md` (110 lines — complete federated search guide)
+Read: RagVault `vault://xsiam-build-xql-queries/federated-search.md` (110 lines — complete federated search guide)
 
 - [ ] **Step 2: Write `xql-federated-search.md`**
 
@@ -893,7 +893,7 @@ reference), 4 complete annotated examples, and 7-step workflow."
 - [ ] **Step 1: Read source material**
 
 Read:
-- RagVault: `/Users/joeplunkett/Documents/RagVault/xsiam-build-xql-queries/xql-query-builder.md` (Splunk-to-XQL mapping table, lines ~126-151)
+- RagVault: `vault://xsiam-build-xql-queries/xql-query-builder.md` (Splunk-to-XQL mapping table, lines ~126-151)
 
 - [ ] **Step 2: Create directory structure**
 

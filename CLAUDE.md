@@ -108,10 +108,6 @@ Three skills share a common XQL reference layer under `xsiam-shared/references/`
 - Arg defaults use `defaultValue:` (not `default:`); list args include `isArray: true`
 - Config params should include `additionalinfo:` tooltips and `section:` for tab assignment
 
-## Knowledge Source
-
-The Obsidian XSIAM knowledge vault at `/Users/joeplunkett/Documents/RagVault/` contains comprehensive XSIAM documentation (XQL stages, functions, datasets, APIs, etc.). Use it as a source when improving or expanding skill reference files.
-
 ## When Editing Skills or References
 
 - Skills reference their own reference files with relative paths (e.g., `references/script-yaml-spec.md`, `../xsiam-shared/references/common-patterns.md`)
